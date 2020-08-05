@@ -14,14 +14,16 @@
 					v-on:dragging="val => resize(val, index)"
 					@clicked="activeIndex = index"
 					:parentLimitation="true"
-					@deactivated="activeIndex = null"
 					@resizestop="val=> resizeStop(val, index)"
 					@dragstop="val=> resizeStop(val, index)"
+					@deactivated="activeIndex = 'no'"
 				>
 					<template v-if="item.type != 'text'">
 						<header class="chart-head">
 							<span>{{item.title + index}}</span>
-                            
+							<ul class="head-menu" @mousedown.stop>
+								<i class="el-icon-edit" @click="editSize = !editSize"></i>
+							</ul>
 						</header>
 						<div class="drag-box" @mousedown.stop>
 							<ve-chart
@@ -45,6 +47,48 @@
 			<div class="stand stand-x" :style="xStand"></div>
 			<div class="stand stand-y" :style="yStand"></div>
 		</section>
+		<Popup :showPp="editSize" title="设置盒子位置大小">
+			<div class="form-size">
+				<div class="form-items">
+					<div class="form-inp">
+						<span>距左边框</span>
+						<el-input size="small" v-model="editSizeInfo.left"></el-input>
+					</div>
+					<div class="form-inp">
+						<span>距右边框</span>
+						<el-input size="small" v-model="editSizeInfo.top"></el-input>
+					</div>
+				</div>
+				<div class="form-items">
+					<div class="form-inp">
+						<span>宽度</span>
+						<el-input size="small" v-model="editSizeInfo.width"></el-input>
+					</div>
+					<div class="form-inp">
+						<span>高度</span>
+						<el-input size="small" v-model="editSizeInfo.height"></el-input>
+					</div>
+				</div>
+			</div>
+			<!-- <el-form ref="form" :model="editSizeInfo" label-width="100px" :inline="true">
+				<el-form-item label="距左边框">
+					<el-input size="small" v-model="editSizeInfo.left"></el-input>
+				</el-form-item>
+				<el-form-item label="距右边框">
+					<el-input v-model="editSizeInfo.top"></el-input>
+				</el-form-item>
+				<el-form-item label="宽度">
+					<el-input v-model="editSizeInfo.width"></el-input>
+				</el-form-item>
+				<el-form-item label="高度">
+					<el-input v-model="editSizeInfo.height"></el-input>
+				</el-form-item>
+				<el-form-item>
+					<el-button type="primary" @click="onSubmit">确认</el-button>
+					<el-button>取消</el-button>
+				</el-form-item>
+			</el-form>-->
+		</Popup>
 	</div>
 </template>
 
@@ -150,19 +194,20 @@
 				},
 				// 位置距离最近的
 				nearIndex: null,
-				// left top 距离最近的index
-				nearIndObj: {
-					topInd: 0,
-					leftInd: 0,
-					resLeftCen: 0,
-					resTopCen: 0,
-				},
 				pagePostStu: true,
 				// 需改边的left 和 top
 				leftChange: "no",
 				topChange: "no",
 				addFuncTol: null,
 				throTimer: null,
+				// 编辑长宽
+				editSize: false,
+				editSizeInfo: {
+					left: 0,
+					top: 0,
+					width: 0,
+					height: 0,
+				},
 			};
 		},
 		methods: {
@@ -202,14 +247,13 @@
 				this.bodySize.height = this.$refs.dashBody.clientHeight;
 			},
 			judgeLoact(newRect, index) {
-				if (!this.addFuncTol) {
-					this.addFuncTol = this.throttle(this.dealLocat, 300);
-				}
-				this.addFuncTol(newRect, index);
+				// if (!this.addFuncTol) {
+				// 	this.addFuncTol = this.throttle(this.dealLocat, 500);
+				// }
+				this.dealLocat(newRect, index);
 			},
 			dealLocat(newRect, index) {
 				this.pagePost(newRect, index);
-				this.findXYEle(index);
 				this.blockPost(newRect, index);
 			},
 			// 查找离当前移动块最近的元素索引
@@ -231,54 +275,12 @@
 				);
 				return resArr.findIndex((i) => i == resArrCp[1]);
 			},
-			// 找到最近的块
-			findXYEle(index) {
-				let obj = { topInd: null, leftInd: null };
-				let resTop = this.boxList.map((it, ind) => {
-					return Math.abs(it.top - this.boxList[index].top);
-				});
-				let resLeft = this.boxList.map((it, ind) => {
-					return Math.abs(it.left - this.boxList[index].left);
-				});
-				let resLeftCen = this.boxList.map((it, ind) => {
-					return Math.abs(
-						it.left +
-							it.width / 2 -
-							this.boxList[index].left -
-							this.boxList[index].width / 2
-					);
-				});
-				let resTopCen = this.boxList.map((it, ind) => {
-					return Math.abs(
-						it.top +
-							it.height / 2 -
-							this.boxList[index].top -
-							this.boxList[index].height / 2
-					);
-				});
-				this.nearIndObj.topInd = resTop.findIndex(
+			// 找排第二
+			findTwo(arr) {
+				return arr.findIndex(
 					(i) =>
 						i ==
-						JSON.parse(JSON.stringify(resTop)).sort((a, b) => a - b)[1]
-				);
-				this.nearIndObj.leftInd = resLeft.findIndex(
-					(i) =>
-						i ==
-						JSON.parse(JSON.stringify(resLeft)).sort((a, b) => a - b)[1]
-				);
-				this.nearIndObj.resLeftCen = resLeftCen.findIndex(
-					(i) =>
-						i ==
-						JSON.parse(JSON.stringify(resLeftCen)).sort(
-							(a, b) => a - b
-						)[1]
-				);
-				this.nearIndObj.resTopCen = resTopCen.findIndex(
-					(i) =>
-						i ==
-						JSON.parse(JSON.stringify(resTopCen)).sort(
-							(a, b) => a - b
-						)[1]
+						JSON.parse(JSON.stringify(arr)).sort((a, b) => a - b)[1]
 				);
 			},
 			// 页面定位
@@ -312,11 +314,60 @@
 			},
 			// 块定位
 			blockPost(newRect, index) {
+				let resTopArr = [];
+				let resLeftArr = [];
+				let resBotmArr = [];
+				let resRightArr = [];
+				let resLevArr = [];
+				let resVerArr = [];
+				this.boxList.forEach((it, ind) => {
+					resTopArr.push(Math.abs(it.top - this.boxList[index].top));
+					resLeftArr.push(Math.abs(it.left - this.boxList[index].left));
+					resRightArr.push(
+						Math.abs(
+							it.left +
+								it.width -
+								this.boxList[index].left -
+								this.boxList[index].width
+						)
+					);
+					resBotmArr.push(
+						Math.abs(
+							it.top +
+								it.height -
+								this.boxList[index].top -
+								this.boxList[index].height
+						)
+					);
+					resLevArr.push(
+						Math.abs(
+							it.left +
+								it.width / 2 -
+								this.boxList[index].left -
+								this.boxList[index].width / 2
+						)
+					);
+					resVerArr.push(
+						Math.abs(
+							it.top +
+								it.height / 2 -
+								this.boxList[index].top -
+								this.boxList[index].height / 2
+						)
+					);
+				});
+				let topInd = this.findTwo(resTopArr);
+				let leftInd = this.findTwo(resLeftArr);
+				let botmInd = this.findTwo(resBotmArr);
+				let rightInd = this.findTwo(resRightArr);
+				let levInd = this.findTwo(resLevArr); //水平
+				let verInd = this.findTwo(resVerArr); //垂直
 				// 边对齐
 				// left right
 				if (this.leftChange == "no") {
-					let leftObjEle = this.boxList[this.nearIndObj.leftInd];
-					let leftObjCenEle = this.boxList[this.nearIndObj.resLeftCen];
+					let leftObjEle = this.boxList[leftInd];
+					let leftObjCenEle = this.boxList[levInd];
+					let rightObjCenEle = this.boxList[rightInd];
 					let leftCenDis = Math.abs(
 						newRect.left +
 							newRect.width / 2 -
@@ -325,8 +376,8 @@
 					);
 					let leftDis = Math.abs(leftObjEle.left - newRect.left);
 					let rightDis = Math.abs(
-						leftObjEle.left +
-							leftObjEle.width -
+						rightObjCenEle.left +
+							rightObjCenEle.width -
 							newRect.left -
 							newRect.width
 					);
@@ -344,9 +395,11 @@
 						this.yStand.display = "block";
 					} else if (rightDis < 10 && rightDis != 0) {
 						this.leftChange =
-							leftObjEle.left + leftObjEle.width - newRect.width;
+							rightObjCenEle.left +
+							rightObjCenEle.width -
+							newRect.width;
 						this.yStand.left =
-							leftObjEle.left + leftObjEle.width + "px";
+							rightObjCenEle.left + rightObjCenEle.width + "px";
 						this.yStand.display = "block";
 					} else {
 						this.leftChange = "no";
@@ -355,8 +408,9 @@
 				}
 				// top bootom
 				if (this.topChange == "no") {
-					let topObjEle = this.boxList[this.nearIndObj.topInd];
-					let topObjCenEle = this.boxList[this.nearIndObj.resTopCen];
+					let topObjEle = this.boxList[topInd];
+					let topObjCenEle = this.boxList[verInd];
+					let bootomObjCenEle = this.boxList[botmInd];
 					let topCenDis = Math.abs(
 						newRect.top +
 							newRect.height / 2 -
@@ -365,11 +419,12 @@
 					);
 					let topDis = Math.abs(topObjEle.top - newRect.top);
 					let bootomDis = Math.abs(
-						topObjEle.top +
-							topObjEle.height -
+						bootomObjCenEle.top +
+							bootomObjCenEle.height -
 							newRect.top -
 							newRect.height
 					);
+
 					if (topCenDis < 10 && topCenDis != 0) {
 						this.xStand.top =
 							topObjEle.top + topObjEle.height / 2 + "px";
@@ -384,10 +439,11 @@
 						this.xStand.display = "block";
 					} else if (bootomDis < 10 && bootomDis != 0) {
 						this.topChange =
-							topObjEle.top +
-							topObjEle.height -
+							bootomObjCenEle.top +
+							bootomObjCenEle.height -
 							this.boxList[index].height;
-						this.xStand.top = topObjEle.top + topObjEle.height + "px";
+						this.xStand.top =
+							bootomObjCenEle.top + bootomObjCenEle.height + "px";
 						this.xStand.display = "block";
 					} else {
 						this.topChange = "no";
@@ -411,67 +467,122 @@
 		mounted() {
 			this.getBodySiz();
 		},
-		computed: {},
+		components: {
+			Popup: () => import("./Popup.vue"),
+		},
 	};
 </script>
 
 <style lang="scss" scoped>
-	.dash-board {
+.dash-board {
+	width: 100%;
+	height: 100%;
+	background-color: #ececec;
+	padding: 20px;
+	box-sizing: border-box;
+	position: relative;
+}
+.dash-body {
+	position: relative;
+	z-index: 0;
+	height: 100%;
+	background-color: #fff;
+}
+.drag-box {
+	width: 100%;
+	height: calc(100% - 30px);
+}
+.drag-head {
+	height: 100%;
+}
+.vue-drag {
+	box-shadow: 0px 0px 5px -2px rgba(0, 0, 0, 0.4);
+	border-radius: 4px;
+	padding: 0 10px 10px 10px;
+	box-sizing: border-box;
+	background-color: #fff;
+	&:hover .head-menu {
+		display: block;
+	}
+}
+.header-title {
+	height: 100%;
+	text-align: center;
+	width: 100%;
+	&::after {
+		vertical-align: middle;
+		content: "";
+		height: 100%;
+		width: 0;
+		display: inline-block;
+	}
+}
+.stand {
+	position: absolute;
+	z-index: 99999;
+	&-x {
+		height: 0;
 		width: 100%;
+		border-top: 1px dashed #6eb1eb;
+	}
+	&-y {
 		height: 100%;
-		background-color: #ececec;
-		padding: 20px;
-		box-sizing: border-box;
+		width: 0;
+		border-right: 1px dashed #6eb1eb;
 	}
-	.dash-body {
-		position: relative;
-		z-index: 0;
-		height: 100%;
-		background-color: #fff;
+}
+.chart-head {
+	height: 40px;
+	display: flex;
+	align-items: center;
+	cursor: move;
+	justify-content: space-between;
+}
+.head-menu {
+	display: none;
+	border-radius: 2em;
+	border: 1px solid transparent;
+	transition: border-color 0.2s;
+	cursor: auto;
+	&:hover {
+		border-color: #44444480;
 	}
-	.drag-box {
-		width: 100%;
-		height: calc(100% - 30px);
-	}
-	.drag-head {
-		height: 100%;
-	}
-	.vue-drag {
-		box-shadow: 0px 0px 5px -2px rgba(0, 0, 0, 0.4);
-		border-radius: 4px;
-		padding: 0 10px 10px 10px;
-		box-sizing: border-box;
-		background-color: #fff;
-	}
-	.header-title {
-		height: 100%;
-		text-align: center;
-		width: 100%;
-		&::after {
-			vertical-align: middle;
-			content: "";
-			height: 100%;
-			width: 0;
-			display: inline-block;
+	padding: 2px 10px;
+	& > i {
+		cursor: pointer;
+		display: inline-block;
+		border-radius: 50%;
+		padding: 4px;
+		background-color: transparent;
+		transition: all 0.4s;
+		&:hover {
+			background-color: rgba(0, 0, 0, 0.2);
 		}
 	}
-	.stand {
-		position: absolute;
-		z-index: 99999;
-		&-x {
-			height: 0;
-			width: 100%;
-			border-top: 1px dashed #6eb1eb;
-		}
-		&-y {
-			height: 100%;
-			width: 0;
-			border-right: 1px dashed #6eb1eb;
-		}
+	& > i + i {
+		margin-left: 10px;
 	}
-	.chart-head {
-		height: 30px;
-		line-height: 30px;
-		cursor: move;
+}
+.form-size > div + div {
+	margin-top: 10px;
+}
+.form-items {
+	display: flex;
+	& > div {
+		width: 50%;
 	}
+}
+.form-inp {
+	display: flex;
+	align-items: center;
+	font-size: 14px;
+	span {
+		text-align: right;
+		margin-right: 10px;
+		width: 70px;
+	}
+}
+.el-input {
+	width: 80px;
+}
 </style>
