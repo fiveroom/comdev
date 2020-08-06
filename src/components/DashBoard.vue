@@ -10,6 +10,9 @@
 					:h="item.height"
 					:x="item.left"
 					:y="item.top"
+					:z="item.zIndex"
+					:parentH="bodySize.height"
+					:parentW="bodySize.width"
 					v-on:resizing="val => resize(val, index)"
 					v-on:dragging="val => resize(val, index)"
 					@clicked="activeIndex = index"
@@ -22,7 +25,11 @@
 						<header class="chart-head">
 							<span>{{item.title + index}}</span>
 							<ul class="head-menu" @mousedown.stop>
-								<i class="el-icon-edit" @click="editSize = !editSize"></i>
+								<i class="el-icon-zoom-in" title="放大" @click="showBig(item)"></i>
+								<i class="el-icon-caret-top" title="向上" @click="topEle(item)"></i>
+								<i class="el-icon-caret-bottom" title="向下" @click="bottomEle(item)"></i>
+								<i class="el-icon-edit" title="编辑尺寸" @click="editSize(item)"></i>
+								<i class="el-icon-coin" title="编辑数据"></i>
 							</ul>
 						</header>
 						<div class="drag-box" @mousedown.stop>
@@ -33,13 +40,20 @@
 								height="100%"
 								:resize-delay="100"
 								:judge-width="true"
-								:settings="settingChar(index)"
+								:settings="item.settings"
 							></ve-chart>
 						</div>
 					</template>
 					<template v-else>
 						<div class="drag-head">
-							<h1 class="header-title">这是一个好系统 {{index}}</h1>
+							<ul class="head-abso head-menu" @mousedown.stop>
+								<i class="el-icon-zoom-in" title="放大" @click="showBig(item)"></i>
+								<i class="el-icon-caret-top" title="向上" @click="topEle(item)"></i>
+								<i class="el-icon-caret-bottom" title="向下" @click="bottomEle(item)"></i>
+								<i class="el-icon-edit" title="编辑尺寸" @click="editSize(item)"></i>
+								<i class="el-icon-coin" title="编辑数据"></i>
+							</ul>
+							<h1 class="header-title">{{item.title + index}}</h1>
 						</div>
 					</template>
 				</VueDragResize>
@@ -47,48 +61,58 @@
 			<div class="stand stand-x" :style="xStand"></div>
 			<div class="stand stand-y" :style="yStand"></div>
 		</section>
-		<Popup :showPp="editSize" title="设置盒子位置大小">
-			<div class="form-size">
+		<Popup
+			:showPp="editSizeStu"
+			title="编辑"
+			@catchEv="cachEdit"
+			@confirm="confirmEdit"
+			@closeEv="cachEdit"
+		>
+			<div class="form-size" @keyup.enter="confirmEdit">
+				<!-- <div class="form-items"> -->
+				<div class="form-inp">
+					<span>标题</span>
+					<el-input size="small" v-model="titleE" ref="eidtTitle"></el-input>
+				</div>
+				<!-- </div> -->
 				<div class="form-items">
 					<div class="form-inp">
 						<span>距左边框</span>
-						<el-input size="small" v-model="editSizeInfo.left"></el-input>
+						<el-input size="small" v-model="leftE" type="number" :min="0"></el-input>
 					</div>
 					<div class="form-inp">
-						<span>距右边框</span>
-						<el-input size="small" v-model="editSizeInfo.top"></el-input>
+						<span>距上边框</span>
+						<el-input size="small" v-model="topE" type="number" :min="0"></el-input>
 					</div>
 				</div>
 				<div class="form-items">
 					<div class="form-inp">
 						<span>宽度</span>
-						<el-input size="small" v-model="editSizeInfo.width"></el-input>
+						<el-input size="small" v-model="widthE" type="number" :min="100"></el-input>
 					</div>
 					<div class="form-inp">
 						<span>高度</span>
-						<el-input size="small" v-model="editSizeInfo.height"></el-input>
+						<el-input size="small" v-model="heightE" type="number" :min="100"></el-input>
 					</div>
 				</div>
 			</div>
-			<!-- <el-form ref="form" :model="editSizeInfo" label-width="100px" :inline="true">
-				<el-form-item label="距左边框">
-					<el-input size="small" v-model="editSizeInfo.left"></el-input>
-				</el-form-item>
-				<el-form-item label="距右边框">
-					<el-input v-model="editSizeInfo.top"></el-input>
-				</el-form-item>
-				<el-form-item label="宽度">
-					<el-input v-model="editSizeInfo.width"></el-input>
-				</el-form-item>
-				<el-form-item label="高度">
-					<el-input v-model="editSizeInfo.height"></el-input>
-				</el-form-item>
-				<el-form-item>
-					<el-button type="primary" @click="onSubmit">确认</el-button>
-					<el-button>取消</el-button>
-				</el-form-item>
-			</el-form>-->
 		</Popup>
+		<div
+			:class="['big-wiew', showBigStu?'big-wiew--show':'']"
+			:style="{height:hiddenHei?'0':'calc(100% - 150px)' }"
+		>
+			<div ref="bigShow">
+				<i class="el-icon-close" @click="closeBig"></i>
+				<ve-chart
+					:data="charData"
+					width="100%"
+					height="100%"
+					:resize-delay="100"
+					:judge-width="true"
+					:settings="currBig.settings"
+				></ve-chart>
+			</div>
+		</div>
 	</div>
 </template>
 
@@ -96,13 +120,9 @@
 	export default {
 		name: "DashBoard",
 		data() {
-			this.typeArr = ["line", "histogram", "pie"];
+			this.typeArr = ["line", "histogram", "pie", "ring"];
 			// this.activeIndex = 1;/
 			return {
-				width: 0,
-				height: 0,
-				top: 0,
-				left: 0,
 				charData: {
 					columns: ["日期", "访问用户", "下单用户", "下单率"],
 					rows: [
@@ -145,10 +165,11 @@
 					],
 				},
 				activeIndex: 1,
-				chartSettings: { type: this.typeArr[this.activeIndex] },
 				bodySize: {
-					width: 0,
-					height: 0,
+					width: null,
+					height: null,
+					oldWidth: 1080,
+					oldHeight: 1080,
 				},
 				boxList: [
 					{
@@ -157,7 +178,9 @@
 						height: 300,
 						top: 0,
 						left: 0,
-						type: "line",
+						zIndex: 1,
+						type: "pie",
+						settings: { type: "pie", offsetY: "50%" },
 					},
 					{
 						title: "柱状图",
@@ -165,23 +188,42 @@
 						height: 300,
 						top: 0,
 						left: 0,
+						zIndex: 1,
 						type: "histogram",
+						settings: { type: "histogram" },
 					},
 					{
 						title: "折线图",
 						width: 300,
 						height: 300,
 						top: 0,
+						zIndex: 1,
 						left: 0,
-						type: "pie",
+						type: "line",
+						settings: { type: "line" },
 					},
 					{
 						title: "这是一个好系统",
 						width: 300,
 						height: 300,
 						top: 0,
+						zIndex: 1,
 						left: 0,
 						type: "text",
+					},
+					{
+						title: "环图",
+						width: 300,
+						height: 300,
+						top: 0,
+						left: 0,
+						zIndex: 1,
+						type: "ring",
+						settings: {
+							type: "ring",
+							offsetY: "50%",
+							radius: ["50%", "70%"],
+						},
 					},
 				],
 				xStand: {
@@ -192,31 +234,101 @@
 					left: 0,
 					display: "none",
 				},
-				// 位置距离最近的
-				nearIndex: null,
-				pagePostStu: true,
 				// 需改边的left 和 top
 				leftChange: "no",
 				topChange: "no",
 				addFuncTol: null,
 				throTimer: null,
 				// 编辑长宽
-				editSize: false,
+				editSizeStu: false,
+				drageStu: false,
 				editSizeInfo: {
 					left: 0,
 					top: 0,
 					width: 0,
 					height: 0,
 				},
+				backupData: {
+					left: 0,
+					top: 0,
+					width: 0,
+					height: 0,
+				},
+				titleE: "",
+				leftE: 0,
+				topE: 0,
+				widthE: 0,
+				heightE: 0,
+				currEditItem: null,
+				rundType: ["pie"],
+				resizeChar: null, // char图resize
+				resizeTh: null,
+				currBig: { settings: {} },
+				showBigStu: false,
+				hiddenHei: true,
 			};
 		},
 		methods: {
+			// 关闭放大
+			closeBig() {
+				this.currBig = {};
+				this.showBigStu = false;
+			},
+			// 放大
+			showBig(item) {
+                this.currBig = JSON.parse(JSON.stringify(item));
+                if(this.currBig.type == 'pie'){
+                    this.$nextTick(()=>{
+                        Object.assign(this.currBig.settings, {radius: this.$refs.bigShow.clientHeight*0.4})
+                    })
+                }
+				this.showBigStu = true;
+			},
+			// 向上
+			topEle(item) {
+				let obj = this.boxList.find((i) => i.zIndex == 2);
+				if (obj) obj.zIndex = 1;
+				item.zIndex = 2;
+			},
+			// 向下
+			bottomEle(item) {
+				let obj = this.boxList.find((i) => i.zIndex == 0);
+				if (obj) obj.zIndex = 1;
+				item.zIndex = 0;
+			},
 			resize(newRect, index) {
-				this.boxList[index].width = newRect.width;
-				this.boxList[index].height = newRect.height;
+				this.drageStu = true;
 				this.boxList[index].top = newRect.top;
 				this.boxList[index].left = newRect.left;
 				this.judgeLoact(newRect, index);
+				let needRe = false;
+				if (newRect.width != this.boxList[index].width) {
+					let copyData = null;
+					if (this.boxList[index].type == "pie") {
+						let copyData = JSON.parse(
+							JSON.stringify(
+								Object.assign(this.boxList[index].settings, {
+									radius: newRect.height * 0.4,
+								})
+							)
+						);
+						this.boxList[index].settings = copyData;
+					}
+					this.boxList[index].width = newRect.width;
+					needRe = true;
+				}
+				if (newRect.height != this.boxList[index].height) {
+					this.boxList[index].height = newRect.height;
+					needRe = true;
+				}
+				if (needRe) {
+					if (!this.resizeChar) {
+						this.resizeChar = this.throttle(this.resizeCharFun, 600);
+					}
+					this.resizeChar(index);
+				}
+			},
+			resizeCharFun(index) {
 				let ref = this.$refs[`coluChart${index}`];
 				if (Array.isArray(ref)) {
 					ref[0].echarts.resize();
@@ -225,6 +337,7 @@
 				}
 			},
 			resizeStop(newRect, index) {
+				this.drageStu = false;
 				window.clearTimeout(self.throTimer);
 				if (this.topChange != "no") {
 					this.boxList[index].top = this.topChange;
@@ -232,15 +345,10 @@
 				if (this.leftChange != "no") {
 					this.boxList[index].left = this.leftChange;
 				}
-				// this.$nextTick(() => {
 				this.topChange = "no";
 				this.topChange = "no";
 				this.yStand.display = "none";
 				this.xStand.display = "none";
-				// });
-			},
-			settingChar(index) {
-				return { type: this.typeArr[index] };
 			},
 			getBodySiz() {
 				this.bodySize.width = this.$refs.dashBody.clientWidth;
@@ -367,7 +475,7 @@
 				if (this.leftChange == "no") {
 					let leftObjEle = this.boxList[leftInd];
 					let leftObjCenEle = this.boxList[levInd];
-					let rightObjCenEle = this.boxList[rightInd];
+					let rightObjEle = this.boxList[rightInd];
 					let leftCenDis = Math.abs(
 						newRect.left +
 							newRect.width / 2 -
@@ -376,17 +484,17 @@
 					);
 					let leftDis = Math.abs(leftObjEle.left - newRect.left);
 					let rightDis = Math.abs(
-						rightObjCenEle.left +
-							rightObjCenEle.width -
+						rightObjEle.left +
+							rightObjEle.width -
 							newRect.left -
 							newRect.width
 					);
 					if (leftCenDis < 10 && leftCenDis != 0) {
 						this.yStand.left =
-							leftObjEle.left + leftObjEle.width / 2 + "px";
+							leftObjCenEle.left + leftObjCenEle.width / 2 + "px";
 						this.leftChange =
-							leftObjEle.left +
-							leftObjEle.width / 2 -
+							leftObjCenEle.left +
+							leftObjCenEle.width / 2 -
 							newRect.width / 2;
 						this.yStand.display = "block";
 					} else if (leftDis < 10 && leftDis != 0) {
@@ -395,11 +503,11 @@
 						this.yStand.display = "block";
 					} else if (rightDis < 10 && rightDis != 0) {
 						this.leftChange =
-							rightObjCenEle.left +
-							rightObjCenEle.width -
+							rightObjEle.left +
+							rightObjEle.width -
 							newRect.width;
 						this.yStand.left =
-							rightObjCenEle.left + rightObjCenEle.width + "px";
+							rightObjEle.left + rightObjEle.width + "px";
 						this.yStand.display = "block";
 					} else {
 						this.leftChange = "no";
@@ -424,13 +532,12 @@
 							newRect.top -
 							newRect.height
 					);
-
 					if (topCenDis < 10 && topCenDis != 0) {
 						this.xStand.top =
-							topObjEle.top + topObjEle.height / 2 + "px";
+							topObjCenEle.top + topObjCenEle.height / 2 + "px";
 						this.topChange =
-							topObjEle.top +
-							topObjEle.height / 2 -
+							topObjCenEle.top +
+							topObjCenEle.height / 2 -
 							newRect.height / 2;
 						this.xStand.display = "block";
 					} else if (topDis < 10 && topDis != 0) {
@@ -454,135 +561,309 @@
 			throttle(func, delay) {
 				let startTime = Date.now();
 				let self = this;
+				let timer = null;
 				return function () {
 					let currTime = Date.now();
 					let args = arguments;
-					if (currTime - startTime >= delay) {
+					let diffTime = delay - currTime + startTime;
+					clearInterval(timer);
+					if (diffTime <= 0) {
 						func.apply(self, args);
 						startTime = Date.now();
+					} else {
+						timer = setTimeout(() => {
+							func.apply(self, args);
+						}, diffTime);
 					}
 				};
+			},
+			// 编辑尺寸
+			editSize(obj) {
+				this.backupData = JSON.parse(JSON.stringify(obj));
+				this.titleE = obj.title;
+				this.heightE = obj.height;
+				this.widthE = obj.width;
+				this.leftE = obj.left;
+				this.topE = obj.top;
+				this.currEditItem = obj;
+				this.editSizeStu = true;
+				this.$refs.eidtTitle.focus();
+			},
+			cachEdit() {
+				this.editSizeStu = false;
+				this.currEditItem.top = this.backupData.top;
+				this.currEditItem.left = this.backupData.left;
+				this.currEditItem.width = this.backupData.width;
+				this.currEditItem.height = this.backupData.height;
+				this.currEditItem.title = this.backupData.title;
+			},
+			confirmEdit() {
+				this.editSizeStu = false;
+				this.currEditItem = null;
+			},
+			reloadSize() {
+				this.bodySize.oldWidth = this.bodySize.width;
+				this.bodySize.oldHeight = this.bodySize.height;
+				if (this.$refs.dashBody) {
+					this.bodySize.width = this.$refs.dashBody.clientWidth;
+					this.bodySize.height = this.$refs.dashBody.clientHeight;
+					let ratioW = this.bodySize.oldWidth / this.bodySize.width;
+					let ratioH = this.bodySize.oldHeight / this.bodySize.height;
+					this.boxList.forEach((item) => {
+						item.width = item.width / ratioW;
+						item.left = item.left / ratioW;
+						item.height = item.height / ratioH;
+						item.top = item.top / ratioH;
+					});
+				}
 			},
 		},
 		mounted() {
 			this.getBodySiz();
+			this.resizeTh = this.throttle(this.reloadSize, 500);
+			window.addEventListener("resize", this.resizeTh);
 		},
 		components: {
 			Popup: () => import("./Popup.vue"),
+		},
+		watch: {
+			heightE: {
+				handler(newV, oldV) {
+					if (!this.drageStu) {
+						if (newV >= 0) {
+							this.currEditItem.height = Number.isNaN(
+								parseFloat(newV)
+							)
+								? 0
+								: parseFloat(newV);
+						}
+					}
+				},
+			},
+			widthE: {
+				handler(newV) {
+					if (!this.drageStu) {
+						if (newV >= 0) {
+							this.currEditItem.width = Number.isNaN(parseFloat(newV))
+								? 0
+								: parseFloat(newV);
+						}
+					}
+				},
+			},
+			leftE: {
+				handler(newV) {
+					if (!this.drageStu) {
+						if (newV >= 0) {
+							this.currEditItem.left = Number.isNaN(parseFloat(newV))
+								? 0
+								: parseFloat(newV);
+						}
+					}
+				},
+			},
+			topE: {
+				handler(newV) {
+					if (!this.drageStu) {
+						this.currEditItem.top = Number.isNaN(parseFloat(newV))
+							? 0
+							: parseFloat(newV);
+					}
+				},
+			},
+			titleE: {
+				handler(newV) {
+					if (!this.drageStu) {
+						this.currEditItem.title = newV;
+					}
+				},
+			},
+			currEditItem: {
+				handler(newv, oldv) {
+					if (this.drageStu) {
+						this.heightE = newv.height;
+						this.widthE = newv.width;
+						this.leftE = newv.left;
+						this.topE = newv.top;
+						this.titleE = newv.title;
+					}
+				},
+				deep: true,
+			},
+			showBigStu(newV) {
+				if (newV) {
+					this.hiddenHei = false;
+				} else {
+					setTimeout(() => {
+						this.hiddenHei = true;
+					}, 500);
+				}
+			},
+		},
+		destroyed() {
+			window.removeEventListener("resize", this.resizeTh);
 		},
 	};
 </script>
 
 <style lang="scss" scoped>
-.dash-board {
-	width: 100%;
-	height: 100%;
-	background-color: #ececec;
-	padding: 20px;
-	box-sizing: border-box;
-	position: relative;
-}
-.dash-body {
-	position: relative;
-	z-index: 0;
-	height: 100%;
-	background-color: #fff;
-}
-.drag-box {
-	width: 100%;
-	height: calc(100% - 30px);
-}
-.drag-head {
-	height: 100%;
-}
-.vue-drag {
-	box-shadow: 0px 0px 5px -2px rgba(0, 0, 0, 0.4);
-	border-radius: 4px;
-	padding: 0 10px 10px 10px;
-	box-sizing: border-box;
-	background-color: #fff;
-	&:hover .head-menu {
-		display: block;
-	}
-}
-.header-title {
-	height: 100%;
-	text-align: center;
-	width: 100%;
-	&::after {
-		vertical-align: middle;
-		content: "";
-		height: 100%;
-		width: 0;
-		display: inline-block;
-	}
-}
-.stand {
-	position: absolute;
-	z-index: 99999;
-	&-x {
-		height: 0;
+	.dash-board {
 		width: 100%;
-		border-top: 1px dashed #6eb1eb;
-	}
-	&-y {
 		height: 100%;
-		width: 0;
-		border-right: 1px dashed #6eb1eb;
+		background-color: #ececec;
+		padding: 20px;
+		box-sizing: border-box;
+		position: relative;
 	}
-}
-.chart-head {
-	height: 40px;
-	display: flex;
-	align-items: center;
-	cursor: move;
-	justify-content: space-between;
-}
-.head-menu {
-	display: none;
-	border-radius: 2em;
-	border: 1px solid transparent;
-	transition: border-color 0.2s;
-	cursor: auto;
-	&:hover {
-		border-color: #44444480;
+	.dash-body {
+		position: relative;
+		z-index: 0;
+		height: 100%;
+		background-color: #fff;
 	}
-	padding: 2px 10px;
-	& > i {
-		cursor: pointer;
-		display: inline-block;
-		border-radius: 50%;
-		padding: 4px;
-		background-color: transparent;
-		transition: all 0.4s;
-		&:hover {
-			background-color: rgba(0, 0, 0, 0.2);
+	.drag-box {
+		width: 100%;
+		height: calc(100% - 30px);
+		padding: 0 10px 10px;
+		box-sizing: border-box;
+	}
+	.drag-head {
+		position: relative;
+		height: 100%;
+	}
+	.vue-drag {
+		box-shadow: 0px 0px 5px -2px rgba(0, 0, 0, 0.4);
+		border-radius: 4px;
+		// padding: 0 10px 10px 10px;
+		box-sizing: border-box;
+		background-color: #fff;
+		&:hover .head-menu {
+			display: block;
 		}
 	}
-	& > i + i {
-		margin-left: 10px;
+	.header-title {
+		height: 100%;
+		text-align: center;
+		width: 100%;
+		&::after {
+			vertical-align: middle;
+			content: "";
+			height: 100%;
+			width: 0;
+			display: inline-block;
+		}
 	}
-}
-.form-size > div + div {
-	margin-top: 10px;
-}
-.form-items {
-	display: flex;
-	& > div {
-		width: 50%;
+	.stand {
+		position: absolute;
+		z-index: 99999;
+		&-x {
+			height: 0;
+			width: 100%;
+			border-top: 1px dashed #6eb1eb;
+		}
+		&-y {
+			height: 100%;
+			width: 0;
+			border-right: 1px dashed #6eb1eb;
+		}
 	}
-}
-.form-inp {
-	display: flex;
-	align-items: center;
-	font-size: 14px;
-	span {
-		text-align: right;
-		margin-right: 10px;
-		width: 70px;
+	.chart-head {
+		height: 40px;
+		display: flex;
+		padding: 0 10px;
+		align-items: center;
+		cursor: move;
+		justify-content: space-between;
 	}
-}
-.el-input {
-	width: 80px;
-}
+	.head-abso {
+		position: absolute;
+		right: 10px;
+		top: 5px;
+	}
+	.head-menu {
+		display: none;
+		border-radius: 2em;
+		border: 1px solid transparent;
+		transition: border-color 0.2s;
+		cursor: auto;
+		&:hover {
+			border-color: #44444480;
+		}
+		padding: 2px 10px;
+		& > i {
+			cursor: pointer;
+			display: inline-block;
+			border-radius: 50%;
+			padding: 4px;
+			background-color: transparent;
+			transition: all 0.4s;
+			&:hover {
+				background-color: rgba(0, 0, 0, 0.2);
+			}
+		}
+		& > i + i {
+			margin-left: 10px;
+		}
+	}
+	.form-size > div + div {
+		margin-top: 14px;
+	}
+	.form-items {
+		display: flex;
+		& > div {
+			width: 50%;
+		}
+	}
+	.form-inp {
+		display: flex;
+		align-items: center;
+		font-size: 14px;
+		span {
+			text-align: right;
+			margin-right: 10px;
+			width: 70px;
+			flex-shrink: 0;
+		}
+	}
+	.form-size .el-input {
+		width: 80px;
+		flex-grow: 1;
+	}
+
+	// ::v-deep .form-size input:invalid {
+	// 	border-color: #f56c6c;
+	// }
+	.big-wiew {
+		position: absolute;
+		z-index: 99999;
+		width: calc(100% - 150px);
+		top: 50%;
+		left: 50%;
+		transform: translate(-50%, -50%);
+		box-shadow: 0px 0px 5px -2px rgba(0, 0, 0, 0.4);
+		transform: translate(-50%, calc(-50% - 40px));
+		opacity: 0;
+		transition-duration: 0.4s;
+		overflow: hidden;
+		transition-property: opacity, transform;
+		background-color: #fff;
+		border-radius: 4px;
+		&--show {
+			transform: translate(-50%, -50%);
+			opacity: 1;
+		}
+		& > div {
+			height: 100%;
+			padding: 10px;
+			box-sizing: border-box;
+			i {
+				font-size: 24px;
+				position: absolute;
+				right: 10px;
+				top: 10px;
+				cursor: pointer;
+				z-index: 1;
+			}
+		}
+	}
 </style>
