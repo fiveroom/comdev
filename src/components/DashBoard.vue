@@ -1,11 +1,13 @@
 <template>
 	<div class="dash-board">
+		<!-- v-show="refreshDash" -->
 		<section class="dash-body" ref="dashBody">
-			<template v-for="(item, index) in boxList">
+			<template v-for="item in boxList">
+				<!-- :ref="`box${item.index}`" -->
 				<VueDragResize
-					:key="index"
+					:key="item.index"
 					class="vue-drag"
-					:isActive="activeIndex == index"
+					:isActive="activeIndex == item.index"
 					:w="item.width"
 					:h="item.height"
 					:x="item.left"
@@ -13,28 +15,43 @@
 					:z="item.zIndex"
 					:parentH="bodySize.height"
 					:parentW="bodySize.width"
-					v-on:resizing="val => resize(val, index)"
-					v-on:dragging="val => resize(val, index)"
-					@clicked="activeIndex = index"
+					v-on:resizing="val => resize(val, item)"
+					v-on:dragging="val => resize(val, item)"
+					@clicked="activeIndex = item.index"
 					:parentLimitation="true"
-					@resizestop="val=> resizeStop(val, index)"
-					@dragstop="val=> resizeStop(val, index)"
+					@resizestop="val=> resizeStop(val,item)"
+					@dragstop="val=> resizeStop(val,item)"
 					@deactivated="activeIndex = 'no'"
+					v-if="item.show"
+					:minw="240"
 				>
-					<template v-if="item.type != 'text'">
+					<template v-if="item.type != 'text' && item.type != 'numText'">
 						<header class="chart-head">
-							<span>{{item.title + index}}</span>
-							<ul class="head-menu" @mousedown.stop>
-								<i class="el-icon-zoom-in" title="放大" @click="showBig(item)"></i>
-								<i class="el-icon-caret-top" title="向上" @click="topEle(item)"></i>
-								<i class="el-icon-caret-bottom" title="向下" @click="bottomEle(item)"></i>
+							<span>{{item.title + item.index}}</span>
+							<ul class="head-menu head-abso" @mousedown.stop>
 								<i class="el-icon-edit" title="编辑尺寸" @click="editSize(item)"></i>
-								<i class="el-icon-coin" title="编辑数据"></i>
+								<i class="el-icon-coin" title="编辑样式"></i>
+								<div class="head-menu-more">
+									<i class="el-icon-menu" title="更多"></i>
+									<div class="menu-ul">
+										<ul>
+											<li>
+												<i class="el-icon-zoom-in" title="放大" @click="showBig(item)"></i>
+											</li>
+											<li>
+												<i class="el-icon-caret-top" title="向上" @click="topEle(item)"></i>
+											</li>
+											<li>
+												<i class="el-icon-caret-bottom" title="向下" @click="bottomEle(item)"></i>
+											</li>
+										</ul>
+									</div>
+								</div>
 							</ul>
 						</header>
 						<div class="drag-box" @mousedown.stop>
 							<ve-chart
-								:ref="'coluChart' + index"
+								:ref="'coluChart' + item.index"
 								:data="charData"
 								width="100%"
 								height="100%"
@@ -44,16 +61,57 @@
 							></ve-chart>
 						</div>
 					</template>
-					<template v-else>
+					<template v-else-if="item.type == 'text'">
 						<div class="drag-head">
 							<ul class="head-abso head-menu" @mousedown.stop>
-								<i class="el-icon-zoom-in" title="放大" @click="showBig(item)"></i>
-								<i class="el-icon-caret-top" title="向上" @click="topEle(item)"></i>
-								<i class="el-icon-caret-bottom" title="向下" @click="bottomEle(item)"></i>
 								<i class="el-icon-edit" title="编辑尺寸" @click="editSize(item)"></i>
 								<i class="el-icon-coin" title="编辑数据"></i>
+								<div class="head-menu-more">
+									<i class="el-icon-menu" title="更多"></i>
+									<div class="menu-ul">
+										<ul>
+											<li>
+												<i class="el-icon-zoom-in" title="放大" @click="showBig(item)"></i>
+											</li>
+											<li>
+												<i class="el-icon-caret-top" title="向上" @click="topEle(item)"></i>
+											</li>
+											<li>
+												<i class="el-icon-caret-bottom" title="向下" @click="bottomEle(item)"></i>
+											</li>
+										</ul>
+									</div>
+								</div>
 							</ul>
-							<h1 class="header-title">{{item.title + index}}</h1>
+							<h1 class="header-title">{{item.title + item.index}}</h1>
+						</div>
+					</template>
+					<template v-else-if="item.type == 'numText'">
+						<div class="drag-head">
+							<ul class="head-abso head-menu" @mousedown.stop>
+								<i class="el-icon-edit" title="编辑尺寸" @click="editSize(item)"></i>
+								<i class="el-icon-coin" title="编辑数据"></i>
+								<div class="head-menu-more">
+									<i class="el-icon-menu" title="更多"></i>
+									<div class="menu-ul">
+										<ul>
+											<li class="menu-li-border">
+												<i class="el-icon-zoom-in" title="放大" @click="showBig(item)"></i>
+											</li>
+											<li>
+												<i class="el-icon-caret-top" title="向上" @click="topEle(item)"></i>
+											</li>
+											<li class="menu-li-border">
+												<i class="el-icon-caret-bottom" title="向下" @click="bottomEle(item)"></i>
+											</li>
+											<li>
+												<i class="iconfont icon-beijingtu" title="添加背景图" @click="addBgcBox(item)"></i>
+											</li>
+										</ul>
+									</div>
+								</div>
+							</ul>
+							<div></div>
 						</div>
 					</template>
 				</VueDragResize>
@@ -70,6 +128,7 @@
 		>
 			<div class="form-size" @keyup.enter="confirmEdit">
 				<!-- <div class="form-items"> -->
+				<div class="mini-title">位置信息</div>
 				<div class="form-inp">
 					<span>标题</span>
 					<el-input size="small" v-model="titleE" ref="eidtTitle"></el-input>
@@ -95,6 +154,39 @@
 						<el-input size="small" v-model="heightE" type="number" :min="100"></el-input>
 					</div>
 				</div>
+				<div class="mini-title">块背景</div>
+				<div>
+					<el-upload
+						class="upimg-box"
+						:show-file-list="false"
+						:before-upload="beforUpImage"
+						:http-request="()=>{}"
+						accept="image/*"
+						action="#"
+					>
+						<img v-if="upImageData" :src="upImageData" class="avatar" />
+						<i v-else class="el-icon-plus avatar-uploader-icon"></i>
+					</el-upload>
+					<div class="upimg-menu">
+						<el-button plain size="small" type="danger">移除</el-button>
+						<el-button plain size="small" type="primary">应用所有</el-button>
+					</div>
+				</div>
+				<div class="mini-title">块边框</div>
+                <div class="border-inp">
+                    <div>
+                        <span>宽度</span>
+                        <el-input size="mini" type="number" ></el-input>
+                    </div>
+                    <div>
+                        <span>颜色</span>
+                        <el-input size="mini" type="color" ></el-input>
+                    </div>
+                    <div>
+                        <span>样式</span>
+                        <el-input size="mini" type="number" ></el-input>
+                    </div>
+                </div>
 			</div>
 		</Popup>
 		<div
@@ -113,6 +205,13 @@
 				></ve-chart>
 			</div>
 		</div>
+		<!-- <el-dialog title="设置背景图" :visible.sync="dialogVisible" width="30%" :before-close="handleClose">
+			<span>这是一段信息</span>
+			<span slot="footer" class="dialog-footer">
+				<el-button @click="dialogVisible = false">取 消</el-button>
+				<el-button type="primary" @click="dialogVisible = false">确 定</el-button>
+			</span>
+		</el-dialog>-->
 	</div>
 </template>
 
@@ -166,42 +265,48 @@
 				},
 				activeIndex: 1,
 				bodySize: {
-					width: null,
-					height: null,
-					oldWidth: 1080,
-					oldHeight: 1080,
+					width: 1880,
+					height: 967,
+					oldWidth: 1880,
+					oldHeight: 967,
 				},
 				boxList: [
-					{
-						title: "饼图",
-						width: 300,
-						height: 300,
-						top: 0,
-						left: 0,
-						zIndex: 1,
-						type: "pie",
-						settings: { type: "pie", offsetY: "50%" },
-					},
-					{
-						title: "柱状图",
-						width: 300,
-						height: 300,
-						top: 0,
-						left: 0,
-						zIndex: 1,
-						type: "histogram",
-						settings: { type: "histogram" },
-					},
-					{
-						title: "折线图",
-						width: 300,
-						height: 300,
-						top: 0,
-						zIndex: 1,
-						left: 0,
-						type: "line",
-						settings: { type: "line" },
-					},
+					// {
+					// 	title: "饼图",
+					// 	width: 300,
+					// 	height: 300,
+					// 	top: 0,
+					// 	left: 0,
+					// 	zIndex: 1,
+					// 	type: "pie",
+					// 	settings: { type: "pie", offsetY: "50%" },
+					// 	index: 1,
+					// 	show: true,
+					// },
+					// {
+					// 	title: "柱状图",
+					// 	width: 300,
+					// 	height: 300,
+					// 	top: 0,
+					// 	left: 0,
+					// 	zIndex: 1,
+					// 	type: "histogram",
+					// 	settings: { type: "histogram" },
+					// 	index: 2,
+					// 	show: true,
+					// },
+					// {
+					// 	title: "折线图",
+					// 	width: 300,
+					// 	height: 300,
+					// 	top: 0,
+					// 	zIndex: 1,
+					// 	left: 0,
+					// 	type: "line",
+					// 	settings: { type: "line" },
+					// 	index: 3,
+					// 	show: true,
+					// },
 					{
 						title: "这是一个好系统",
 						width: 300,
@@ -210,6 +315,8 @@
 						zIndex: 1,
 						left: 0,
 						type: "text",
+						index: 4,
+						show: true,
 					},
 					{
 						title: "环图",
@@ -224,6 +331,19 @@
 							offsetY: "50%",
 							radius: ["50%", "70%"],
 						},
+						index: 5,
+						show: true,
+					},
+					{
+						title: "环图",
+						width: 300,
+						height: 300,
+						top: 0,
+						left: 0,
+						zIndex: 1,
+						type: "numText",
+						index: 6,
+						show: true,
 					},
 				],
 				xStand: {
@@ -266,9 +386,24 @@
 				currBig: { settings: {} },
 				showBigStu: false,
 				hiddenHei: true,
+				refreshDash: true,
+				reloadTimer: null,
+				upImageData: null, // 上传图片
 			};
 		},
 		methods: {
+			beforUpImage(file) {
+				this.statusEdit = true;
+				let filteDa = file;
+				var fileReader = new FileReader();
+				fileReader.readAsDataURL(filteDa);
+				// 读取操作完成触发
+				fileReader.onload = (e) => {
+					this.upImageData = e.target.result;
+				};
+			},
+			// 添加背景图
+			addBgcBox() {},
 			// 关闭放大
 			closeBig() {
 				this.currBig = {};
@@ -276,12 +411,14 @@
 			},
 			// 放大
 			showBig(item) {
-                this.currBig = JSON.parse(JSON.stringify(item));
-                if(this.currBig.type == 'pie'){
-                    this.$nextTick(()=>{
-                        Object.assign(this.currBig.settings, {radius: this.$refs.bigShow.clientHeight*0.4})
-                    })
-                }
+				this.currBig = JSON.parse(JSON.stringify(item));
+				if (this.currBig.type == "pie") {
+					this.$nextTick(() => {
+						Object.assign(this.currBig.settings, {
+							radius: this.$refs.bigShow.clientHeight * 0.4,
+						});
+					});
+				}
 				this.showBigStu = true;
 			},
 			// 向上
@@ -296,54 +433,53 @@
 				if (obj) obj.zIndex = 1;
 				item.zIndex = 0;
 			},
-			resize(newRect, index) {
+			resize(newRect, itemObj) {
 				this.drageStu = true;
-				this.boxList[index].top = newRect.top;
-				this.boxList[index].left = newRect.left;
-				this.judgeLoact(newRect, index);
+				itemObj.top = newRect.top;
+				itemObj.left = newRect.left;
+				this.judgeLoact(newRect, itemObj);
 				let needRe = false;
-				if (newRect.width != this.boxList[index].width) {
+				if (newRect.width != itemObj.width) {
 					let copyData = null;
-					if (this.boxList[index].type == "pie") {
+					if (itemObj.type == "pie") {
+						let radiusW = newRect.width * 0.3;
+						let radiusH = newRect.height * 0.3;
 						let copyData = JSON.parse(
 							JSON.stringify(
-								Object.assign(this.boxList[index].settings, {
-									radius: newRect.height * 0.4,
+								Object.assign(itemObj.settings, {
+									radius: Math.min(radiusW, radiusH),
 								})
 							)
 						);
-						this.boxList[index].settings = copyData;
+						itemObj.settings = copyData;
 					}
-					this.boxList[index].width = newRect.width;
+					itemObj.width = newRect.width;
 					needRe = true;
 				}
-				if (newRect.height != this.boxList[index].height) {
-					this.boxList[index].height = newRect.height;
+				if (newRect.height != itemObj.height) {
+					itemObj.height = newRect.height;
 					needRe = true;
 				}
 				if (needRe) {
-					if (!this.resizeChar) {
-						this.resizeChar = this.throttle(this.resizeCharFun, 600);
-					}
-					this.resizeChar(index);
+					this.resizeChar(itemObj);
 				}
 			},
-			resizeCharFun(index) {
-				let ref = this.$refs[`coluChart${index}`];
+			resizeCharFun(itemObj) {
+				let ref = this.$refs[`coluChart${itemObj.index}`];
 				if (Array.isArray(ref)) {
 					ref[0].echarts.resize();
 				} else if (ref) {
 					ref.echarts.resize();
 				}
 			},
-			resizeStop(newRect, index) {
+			resizeStop(newRect, itemObj) {
 				this.drageStu = false;
 				window.clearTimeout(self.throTimer);
 				if (this.topChange != "no") {
-					this.boxList[index].top = this.topChange;
+					itemObj.top = this.topChange;
 				}
 				if (this.leftChange != "no") {
-					this.boxList[index].left = this.leftChange;
+					itemObj.left = this.leftChange;
 				}
 				this.topChange = "no";
 				this.topChange = "no";
@@ -354,15 +490,15 @@
 				this.bodySize.width = this.$refs.dashBody.clientWidth;
 				this.bodySize.height = this.$refs.dashBody.clientHeight;
 			},
-			judgeLoact(newRect, index) {
+			judgeLoact(newRect) {
 				// if (!this.addFuncTol) {
 				// 	this.addFuncTol = this.throttle(this.dealLocat, 500);
 				// }
-				this.dealLocat(newRect, index);
+				this.dealLocat(newRect);
 			},
-			dealLocat(newRect, index) {
-				this.pagePost(newRect, index);
-				this.blockPost(newRect, index);
+			dealLocat(newRect) {
+				this.pagePost(newRect);
+				this.blockPost(newRect);
 			},
 			// 查找离当前移动块最近的元素索引
 			findMinDis(index) {
@@ -392,7 +528,7 @@
 				);
 			},
 			// 页面定位
-			pagePost(newRect, index) {
+			pagePost(newRect) {
 				let disW = newRect.width / 2 + newRect.left;
 				let disH = newRect.height / 2 + newRect.top;
 				let centerW = this.bodySize.width / 2;
@@ -421,7 +557,7 @@
 				}
 			},
 			// 块定位
-			blockPost(newRect, index) {
+			blockPost(newRect) {
 				let resTopArr = [];
 				let resLeftArr = [];
 				let resBotmArr = [];
@@ -429,38 +565,28 @@
 				let resLevArr = [];
 				let resVerArr = [];
 				this.boxList.forEach((it, ind) => {
-					resTopArr.push(Math.abs(it.top - this.boxList[index].top));
-					resLeftArr.push(Math.abs(it.left - this.boxList[index].left));
+					resTopArr.push(Math.abs(it.top - newRect.top));
+					resLeftArr.push(Math.abs(it.left - newRect.left));
 					resRightArr.push(
-						Math.abs(
-							it.left +
-								it.width -
-								this.boxList[index].left -
-								this.boxList[index].width
-						)
+						Math.abs(it.left + it.width - newRect.left - newRect.width)
 					);
 					resBotmArr.push(
-						Math.abs(
-							it.top +
-								it.height -
-								this.boxList[index].top -
-								this.boxList[index].height
-						)
+						Math.abs(it.top + it.height - newRect.top - newRect.height)
 					);
 					resLevArr.push(
 						Math.abs(
 							it.left +
 								it.width / 2 -
-								this.boxList[index].left -
-								this.boxList[index].width / 2
+								newRect.left -
+								newRect.width / 2
 						)
 					);
 					resVerArr.push(
 						Math.abs(
 							it.top +
 								it.height / 2 -
-								this.boxList[index].top -
-								this.boxList[index].height / 2
+								newRect.top -
+								newRect.height / 2
 						)
 					);
 				});
@@ -503,9 +629,7 @@
 						this.yStand.display = "block";
 					} else if (rightDis < 10 && rightDis != 0) {
 						this.leftChange =
-							rightObjEle.left +
-							rightObjEle.width -
-							newRect.width;
+							rightObjEle.left + rightObjEle.width - newRect.width;
 						this.yStand.left =
 							rightObjEle.left + rightObjEle.width + "px";
 						this.yStand.display = "block";
@@ -548,7 +672,7 @@
 						this.topChange =
 							bootomObjCenEle.top +
 							bootomObjCenEle.height -
-							this.boxList[index].height;
+							newRect.height;
 						this.xStand.top =
 							bootomObjCenEle.top + bootomObjCenEle.height + "px";
 						this.xStand.display = "block";
@@ -591,36 +715,46 @@
 			},
 			cachEdit() {
 				this.editSizeStu = false;
-				this.currEditItem.top = this.backupData.top;
-				this.currEditItem.left = this.backupData.left;
-				this.currEditItem.width = this.backupData.width;
-				this.currEditItem.height = this.backupData.height;
-				this.currEditItem.title = this.backupData.title;
+				// this.currEditItem.top = this.backupData.top;
+				// this.currEditItem.left = this.backupData.left;
+				// this.currEditItem.width = this.backupData.width;
+				// this.currEditItem.height = this.backupData.height;
+				// this.currEditItem.title = this.backupData.title;
 			},
 			confirmEdit() {
 				this.editSizeStu = false;
 				this.currEditItem = null;
 			},
-			reloadSize() {
-				this.bodySize.oldWidth = this.bodySize.width;
-				this.bodySize.oldHeight = this.bodySize.height;
+			reloadSize(ev) {
+				this.editSizeStu = false;
 				if (this.$refs.dashBody) {
+					this.bodySize.oldWidth = this.bodySize.width;
+					this.bodySize.oldHeight = this.bodySize.height;
+					// this.$nextTick(() => {
 					this.bodySize.width = this.$refs.dashBody.clientWidth;
 					this.bodySize.height = this.$refs.dashBody.clientHeight;
 					let ratioW = this.bodySize.oldWidth / this.bodySize.width;
 					let ratioH = this.bodySize.oldHeight / this.bodySize.height;
+					clearInterval(this.reloadTimer);
 					this.boxList.forEach((item) => {
+						let oldWidth = item.width;
+						let oldHeight = item.height;
 						item.width = item.width / ratioW;
-						item.left = item.left / ratioW;
 						item.height = item.height / ratioH;
+						item.left = item.left / ratioW;
 						item.top = item.top / ratioH;
+						item.show = false;
+						this.$nextTick(() => {
+							item.show = true;
+						});
 					});
 				}
 			},
 		},
 		mounted() {
-			this.getBodySiz();
+			this.reloadSize();
 			this.resizeTh = this.throttle(this.reloadSize, 500);
+			this.resizeChar = this.throttle(this.resizeCharFun, 300);
 			window.addEventListener("resize", this.resizeTh);
 		},
 		components: {
@@ -636,6 +770,11 @@
 							)
 								? 0
 								: parseFloat(newV);
+							this.resizeChar(
+								this.boxList.find(
+									(i) => i.index == this.currEditItem.index
+								)
+							);
 						}
 					}
 				},
@@ -647,6 +786,11 @@
 							this.currEditItem.width = Number.isNaN(parseFloat(newV))
 								? 0
 								: parseFloat(newV);
+							this.resizeChar(
+								this.boxList.find(
+									(i) => i.index == this.currEditItem.index
+								)
+							);
 						}
 					}
 				},
@@ -738,7 +882,7 @@
 		box-sizing: border-box;
 		background-color: #fff;
 		&:hover .head-menu {
-			display: block;
+			display: flex;
 		}
 	}
 	.header-title {
@@ -774,6 +918,7 @@
 		align-items: center;
 		cursor: move;
 		justify-content: space-between;
+		position: relative;
 	}
 	.head-abso {
 		position: absolute;
@@ -783,14 +928,14 @@
 	.head-menu {
 		display: none;
 		border-radius: 2em;
-		border: 1px solid transparent;
+		border-top: 1px solid transparent;
 		transition: border-color 0.2s;
 		cursor: auto;
 		&:hover {
-			border-color: #44444480;
+			border-top-color: #44444480;
 		}
 		padding: 2px 10px;
-		& > i {
+		& i {
 			cursor: pointer;
 			display: inline-block;
 			border-radius: 50%;
@@ -801,9 +946,46 @@
 				background-color: rgba(0, 0, 0, 0.2);
 			}
 		}
-		& > i + i {
+		& i + i {
 			margin-left: 10px;
 		}
+		&-more {
+			margin-left: 10px;
+			position: relative;
+			z-index: 1;
+			background-color: #fff;
+			&:hover .menu-ul {
+				height: auto;
+				opacity: 1;
+			}
+		}
+	}
+	.menu-ul {
+		position: absolute;
+		left: 50%;
+		height: 0;
+		overflow: hidden;
+		transform: translateX(-50%);
+		// top: 30px;
+		padding-top: 10px;
+		background-color: #fff;
+		top: 24px;
+		padding: 10px 2px 2px 2px;
+		& ul {
+			list-style: none;
+			box-shadow: 0px 0px 5px -2px rgba(0, 0, 0, 0.4);
+		}
+		& li {
+			padding: 2px 5px;
+		}
+		// & li:nth-child(2n + 1) {
+		// 	border-bottom: 1px solid #c8c8c8;
+		// }
+		opacity: 0;
+		transition: opacity 0.2s;
+	}
+	.menu-li-border {
+		border-bottom: 1px solid #c8c8c8;
 	}
 	.form-size > div + div {
 		margin-top: 14px;
@@ -829,10 +1011,6 @@
 		width: 80px;
 		flex-grow: 1;
 	}
-
-	// ::v-deep .form-size input:invalid {
-	// 	border-color: #f56c6c;
-	// }
 	.big-wiew {
 		position: absolute;
 		z-index: 99999;
@@ -866,4 +1044,61 @@
 			}
 		}
 	}
+	.mini-title {
+		font-size: 14px;
+	}
+	@media screen {
+	}
+	.upimg-box {
+		display: inline-block;
+		margin: 0 auto;
+		overflow: hidden;
+		img {
+			height: 100%;
+			width: 100%;
+		}
+        vertical-align: bottom;
+		margin-right: 10px;
+		& .el-upload {
+			border-radius: 6px;
+			border: 1px dashed #efefef;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			height: 100%;
+			width: 100px;
+		}
+	}
+	::v-deep .upimg-box .el-upload {
+		border-radius: 6px;
+		border: 1px dashed #efefef;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		height: 100px;
+		width: 100px;
+		&:hover {
+			border-color: #409eff;
+		}
+	}
+    .upimg-menu{
+        display: inline-block;
+        // height: 100px;
+    }
+    .border-inp{
+        display: flex;
+        align-items: center;
+        font-size: 14px;
+        &>div{
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 30%;
+        }
+        .el-input{
+            width: 50px;
+            flex-grow: 0;
+            margin-left: 5px;;
+        }
+    }
 </style>
