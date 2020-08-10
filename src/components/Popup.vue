@@ -1,5 +1,9 @@
 <template>
-	<div :class="['propup', showPp?'propup--show':'']" :style="{height: hidden?'0':'auto'}"  @keydown.esc="$emit('closeEv')">
+	<div
+		:class="['propup', showPp?'propup--show':'']"
+		:style="{height: hidden?'0':'auto'}"
+		@keydown.esc="$emit('closeEv')"
+	>
 		<div class="propup-cont">
 			<header class="propup-head">
 				<span>{{title}}</span>
@@ -8,10 +12,10 @@
 			<main class="propup-body">
 				<slot></slot>
 			</main>
-			<!-- <footer class="propup-foot">
+			<footer class="propup-foot">
 				<el-button size="small" type="primary" @click="$emit('confirm')">确认</el-button>
 				<el-button size="small" @click="$emit('catchEv')">取消</el-button>
-			</footer> -->
+			</footer>
 		</div>
 	</div>
 </template>
@@ -43,8 +47,7 @@
 				}
 			},
 		},
-		methods: {
-		},
+		methods: {},
 	};
 </script>
 
@@ -65,6 +68,7 @@
 		}
 	}
 	.propup {
+		z-index: 99;
 		position: absolute;
 		box-shadow: 0px 0px 5px -2px rgba(0, 0, 0, 0.4);
 		background-color: #fff;
@@ -76,9 +80,15 @@
 		border-radius: 4px;
 		transition: all 0.4s;
 		opacity: 0;
+		background-color: #fff;
 		transition-duration: 0.4s;
 		transition-property: opacity, transform;
-		overflow: hidden;
+		max-height: calc(100% - 40px);
+		overflow: auto;
+		&-cont {
+			height: 100%;
+			overflow: auto;
+		}
 		&--show {
 			opacity: 1;
 			transform: translateY(0);
@@ -108,7 +118,7 @@
 		&-head i {
 			float: right;
 			cursor: pointer;
-			&:hover{
+			&:hover {
 				color: #000;
 			}
 		}

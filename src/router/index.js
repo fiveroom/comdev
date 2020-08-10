@@ -14,6 +14,11 @@ const routes = [
     path: '/dboard',
     name: 'dboard',
     component: () => import('@/components/DashBoard')
+  },
+  {
+    path: '/dboardShow',
+    name: 'dboardShow',
+    component: () => import('@/components/DashBoardShow')
   }
 ]
 

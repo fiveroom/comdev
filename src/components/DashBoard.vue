@@ -1,7 +1,14 @@
 <template>
 	<div class="dash-board">
 		<!-- v-show="refreshDash" -->
-		<section class="dash-body" ref="dashBody">
+		<section
+			class="dash-body"
+			ref="dashBody"
+			:style="{
+            backgroundColor: bodyStyle.backgroundColor,
+            backgroundImage: `url(${bodyStyle.backgroundImage})`
+        }"
+		>
 			<template v-for="item in boxList">
 				<!-- :ref="`box${item.index}`" -->
 				<VueDragResize
@@ -23,11 +30,16 @@
 					@dragstop="val=> resizeStop(val,item)"
 					@deactivated="activeIndex = 'no'"
 					v-if="item.show"
-					:minw="240"
+					:minw="150"
+					:style="item.style"
 				>
 					<template v-if="item.type != 'text' && item.type != 'numText'">
 						<header class="chart-head">
-							<span>{{item.title + item.index}}</span>
+							<span
+								:style="{
+                                color: item.style.headFColor
+                                }"
+							>{{item.title + item.index}}</span>
 							<ul class="head-menu head-abso" @mousedown.stop>
 								<i class="el-icon-edit" title="编辑尺寸" @click="editSize(item)"></i>
 								<i class="el-icon-coin" title="编辑样式"></i>
@@ -35,7 +47,7 @@
 									<i class="el-icon-menu" title="更多"></i>
 									<div class="menu-ul">
 										<ul>
-											<li>
+											<li class="menu-li-border">
 												<i class="el-icon-zoom-in" title="放大" @click="showBig(item)"></i>
 											</li>
 											<li>
@@ -70,7 +82,7 @@
 									<i class="el-icon-menu" title="更多"></i>
 									<div class="menu-ul">
 										<ul>
-											<li>
+											<li class="menu-li-border">
 												<i class="el-icon-zoom-in" title="放大" @click="showBig(item)"></i>
 											</li>
 											<li>
@@ -83,11 +95,16 @@
 									</div>
 								</div>
 							</ul>
-							<h1 class="header-title">{{item.title + item.index}}</h1>
+							<h1
+								class="header-title"
+								:style="{
+                                color: item.style.headFColor
+                                }"
+							>{{item.title + item.index}}</h1>
 						</div>
 					</template>
 					<template v-else-if="item.type == 'numText'">
-						<div class="drag-head">
+						<div class="drag-head drag-num">
 							<ul class="head-abso head-menu" @mousedown.stop>
 								<i class="el-icon-edit" title="编辑尺寸" @click="editSize(item)"></i>
 								<i class="el-icon-coin" title="编辑数据"></i>
@@ -104,91 +121,283 @@
 											<li class="menu-li-border">
 												<i class="el-icon-caret-bottom" title="向下" @click="bottomEle(item)"></i>
 											</li>
-											<li>
+											<!-- <li>
 												<i class="iconfont icon-beijingtu" title="添加背景图" @click="addBgcBox(item)"></i>
-											</li>
+											</li>-->
 										</ul>
 									</div>
 								</div>
 							</ul>
-							<div></div>
+							<span
+								class="number"
+								:style="{
+                                'font-size': item.style.numFSize + 'px',
+                                'color': item.style.numColor,
+                                'font-weight': item.style.numWeight && 'bolder' || '',
+                                'margin-bottom': item.style.marginB + 'px'
+                            }"
+							>{{item.data.num | formatNum(item.numSetting)}}</span>
+							<span
+								class="remark"
+								v-text="item.title"
+								:style="{
+                                'font-size': item.style.remarkFSize + 'px',
+                                'color': item.style.remarkColor,
+                                'font-weight': item.style.remarkWeight && 'bolder' || '',
+                            }"
+							></span>
 						</div>
 					</template>
 				</VueDragResize>
 			</template>
 			<div class="stand stand-x" :style="xStand"></div>
 			<div class="stand stand-y" :style="yStand"></div>
-		</section>
-		<Popup
-			:showPp="editSizeStu"
-			title="编辑"
-			@catchEv="cachEdit"
-			@confirm="confirmEdit"
-			@closeEv="cachEdit"
-		>
-			<div class="form-size" @keyup.enter="confirmEdit">
-				<!-- <div class="form-items"> -->
-				<div class="mini-title">位置信息</div>
-				<div class="form-inp">
+			<div class="cvs-set">
+				<div class="set-item" title="预览" @click="$router.push('/dboardShow')">
+					<i class="el-icon-view"></i>
+				</div>
+				<div class="set-item" title="全局设置" @click="editGlobalS">
+					<i class="el-icon-monitor"></i>
+				</div>
+				<div class="set-item" title="画布设置" @click="editBodyS">
+					<i class="el-icon-s-tools"></i>
+				</div>
+			</div>
+			<div class="shade" v-show="showShadeStu" @click="closeShadow">
+				<Popup
+					:showPp="editGlobal"
+					title="全局设置"
+					@catchEv="cachEditGlobal"
+					@confirm="confirmEditGlobal"
+					@closeEv="cachEditGlobal"
+					@click.native.stop
+				>
+					<div class="form-size" @keyup.enter="confirmEditGlobal">
+						<div class="mini-title">标题颜色</div>
+						<div class="inp-padding">
+							<el-input size="mini" type="color" v-model="globalData.color"></el-input>
+						</div>
+						<div class="mini-title">块边框</div>
+						<div class="border-inp inp-padding">
+							<div>
+								<span>宽度</span>
+								<el-input size="mini" type="number" v-model="globalData.borderWidth"></el-input>
+							</div>
+							<div>
+								<span>颜色</span>
+								<el-input size="mini" type="color" v-model="globalData.borderColor"></el-input>
+							</div>
+							<div class="border-edit">
+								<span>样式</span>
+								<el-select v-model="globalData.borderStyle" placeholder="请选择" size="mini">
+									<el-option
+										v-for="item in borderStyle"
+										:key="item.value"
+										:label="item.label"
+										:value="item.value"
+									></el-option>
+								</el-select>
+							</div>
+						</div>
+						<div class="mini-title">边框圆角</div>
+						<div class="inp-padding">
+							<el-input size="mini" type="number" v-model="globalData.borderRadius"></el-input>
+						</div>
+						<div class="mini-title">背景图片</div>
+						<div class="inp-padding">
+							<el-upload
+								class="upimg-box"
+								:show-file-list="false"
+								:before-upload="(val) => beforUpImage(val, 'globalData')"
+								:http-request="()=>{}"
+								accept="image/*"
+								action="#"
+							>
+								<img v-if="globalData.backgroundImage" :src="globalData.backgroundImage" class="avatar" />
+								<i v-else class="el-icon-plus avatar-uploader-icon"></i>
+							</el-upload>
+							<div class="upimg-menu">
+								<el-button plain size="small" type="danger" @click="globalData.backgroundImage = ''">移除</el-button>
+							</div>
+						</div>
+						<div class="mini-title">背景颜色</div>
+						<div class="border-inp inp-padding">
+							<div>
+								<span>透明</span>
+								<el-checkbox size="mini" v-model="globalData.backgroundColorTran"></el-checkbox>
+							</div>
+							<div>
+								<span>颜色</span>
+								<el-input size="mini" type="color" v-model="globalData.backgroundColor"></el-input>
+							</div>
+						</div>
+					</div>
+				</Popup>
+			</div>
+			<Popup
+				:showPp="editSizeStu"
+				title="编辑"
+				@catchEv="cachEdit"
+				@confirm="confirmEdit"
+				@closeEv="cachEdit"
+			>
+				<div class="form-size" @keyup.enter="confirmEdit">
+					<!-- <div class="form-items"> -->
+					<div class="mini-title">标题</div>
+					<div class="inp-title inp-padding">
+						<el-input size="small" v-model="titleE" ref="eidtTitle"></el-input>
+						<el-input size="mini" class="inp-title--color" type="color" v-model="currStyle.headFColor"></el-input>
+					</div>
+					<div class="mini-title">位置信息</div>
+					<!-- <div class="form-inp">
 					<span>标题</span>
 					<el-input size="small" v-model="titleE" ref="eidtTitle"></el-input>
+					</div>-->
+					<!-- </div> -->
+					<div class="form-items inp-padding">
+						<div class="form-inp">
+							<span>距左边框</span>
+							<el-input size="small" v-model="leftE" type="number" :min="0"></el-input>
+						</div>
+						<div class="form-inp">
+							<span>距上边框</span>
+							<el-input size="small" v-model="topE" type="number" :min="0"></el-input>
+						</div>
+					</div>
+					<div class="form-items inp-padding">
+						<div class="form-inp">
+							<span>宽度</span>
+							<el-input size="small" v-model="widthE" type="number" :min="100"></el-input>
+						</div>
+						<div class="form-inp">
+							<span>高度</span>
+							<el-input size="small" v-model="heightE" type="number" :min="100"></el-input>
+						</div>
+					</div>
+					<div class="mini-title">块背景图片</div>
+					<div class="inp-padding">
+						<el-upload
+							class="upimg-box"
+							:show-file-list="false"
+							:before-upload="beforUpImage"
+							:http-request="()=>{}"
+							accept="image/*"
+							action="#"
+						>
+							<img v-if="currStyle.backgroundImage" :src="currStyle.backgroundImage" class="avatar" />
+							<i v-else class="el-icon-plus avatar-uploader-icon"></i>
+						</el-upload>
+						<div class="upimg-menu">
+							<el-button plain size="small" type="danger" @click="currStyle.backgroundImage = ''">移除</el-button>
+							<!-- <el-button plain size="small" type="primary">应用所有</el-button> -->
+						</div>
+					</div>
+					<div class="mini-title">块背景颜色</div>
+					<div class="border-inp inp-padding">
+						<div>
+							<span>透明</span>
+							<el-checkbox size="mini" v-model="currStyle.backgroundColorTran"></el-checkbox>
+						</div>
+						<div>
+							<el-input size="mini" type="color" v-model="currStyle.backgroundColor"></el-input>
+						</div>
+					</div>
+					<div class="mini-title">块边框</div>
+					<div class="border-inp inp-padding">
+						<div>
+							<span>宽度</span>
+							<el-input size="mini" type="number" v-model="currStyle.borderWidth"></el-input>
+						</div>
+						<div>
+							<span>颜色</span>
+							<el-input size="mini" type="color" v-model="currStyle.borderColor"></el-input>
+						</div>
+						<div class="border-edit">
+							<span>样式</span>
+							<el-select v-model="currStyle.borderStyle" placeholder="请选择" size="mini">
+								<el-option
+									v-for="item in borderStyle"
+									:key="item.value"
+									:label="item.label"
+									:value="item.value"
+								></el-option>
+							</el-select>
+						</div>
+					</div>
+					<div v-if="currEditItem.type == 'numText'">
+						<div class="mini-title">文本格式</div>
+						<div class="title-two maring-t14">数字</div>
+						<div class="border-inp inp-padding maring-t14">
+							<div>
+								<span>大小</span>
+								<el-input size="mini" type="number" v-model="currStyle.numFSize"></el-input>
+							</div>
+							<div>
+								<span>颜色</span>
+								<el-input size="mini" type="color" v-model="currStyle.numColor"></el-input>
+							</div>
+							<div>
+								<span>加粗</span>
+								<el-checkbox size="mini" v-model="currStyle.numWeight"></el-checkbox>
+							</div>
+						</div>
+						<div class="title-two maring-t14">文本</div>
+						<div class="border-inp inp-padding maring-t14">
+							<div>
+								<span>大小</span>
+								<el-input size="mini" type="number" v-model="currStyle.remarkFSize"></el-input>
+							</div>
+							<div>
+								<span>颜色</span>
+								<el-input size="mini" type="color" v-model="currStyle.remarkColor"></el-input>
+							</div>
+							<div>
+								<span>加粗</span>
+								<el-checkbox size="mini" v-model="currStyle.remarkWeight"></el-checkbox>
+							</div>
+						</div>
+						<div class="title-two maring-t14">上下间距</div>
+						<div class="inp-padding maring-t14">
+							<el-input size="mini" type="number" v-model="currStyle.marginB"></el-input>
+						</div>
+					</div>
 				</div>
-				<!-- </div> -->
-				<div class="form-items">
-					<div class="form-inp">
-						<span>距左边框</span>
-						<el-input size="small" v-model="leftE" type="number" :min="0"></el-input>
+			</Popup>
+			<Popup
+				:showPp="editSizeStuCanv"
+				title="画布设置"
+				@catchEv="cachEditCanv"
+				@confirm="confirmEditCanv"
+				@closeEv="cachEditCanv"
+			>
+				<div class="form-size" @keyup.enter="confirmEdit">
+					<!-- <div class="form-items"> -->
+					<div class="mini-title">背景图片</div>
+					<div class="inp-padding">
+						<el-upload
+							class="upimg-box"
+							:show-file-list="false"
+							:before-upload="(val) => beforUpImage(val, 'body')"
+							:http-request="()=>{}"
+							accept="image/*"
+							action="#"
+						>
+							<img v-if="bodyStyle.backgroundImage" :src="bodyStyle.backgroundImage" class="avatar" />
+							<i v-else class="el-icon-plus avatar-uploader-icon"></i>
+						</el-upload>
+						<div class="upimg-menu">
+							<el-button plain size="small" type="danger" @click="bodyStyle.backgroundImage = ''">移除</el-button>
+							<!-- <el-button plain size="small" type="primary">应用所有</el-button> -->
+						</div>
 					</div>
-					<div class="form-inp">
-						<span>距上边框</span>
-						<el-input size="small" v-model="topE" type="number" :min="0"></el-input>
-					</div>
-				</div>
-				<div class="form-items">
-					<div class="form-inp">
-						<span>宽度</span>
-						<el-input size="small" v-model="widthE" type="number" :min="100"></el-input>
-					</div>
-					<div class="form-inp">
-						<span>高度</span>
-						<el-input size="small" v-model="heightE" type="number" :min="100"></el-input>
-					</div>
-				</div>
-				<div class="mini-title">块背景</div>
-				<div>
-					<el-upload
-						class="upimg-box"
-						:show-file-list="false"
-						:before-upload="beforUpImage"
-						:http-request="()=>{}"
-						accept="image/*"
-						action="#"
-					>
-						<img v-if="upImageData" :src="upImageData" class="avatar" />
-						<i v-else class="el-icon-plus avatar-uploader-icon"></i>
-					</el-upload>
-					<div class="upimg-menu">
-						<el-button plain size="small" type="danger">移除</el-button>
-						<el-button plain size="small" type="primary">应用所有</el-button>
+					<div class="mini-title">背景颜色</div>
+					<div>
+						<el-input size="mini" type="color" v-model="bodyStyle.backgroundColor"></el-input>
 					</div>
 				</div>
-				<div class="mini-title">块边框</div>
-                <div class="border-inp">
-                    <div>
-                        <span>宽度</span>
-                        <el-input size="mini" type="number" ></el-input>
-                    </div>
-                    <div>
-                        <span>颜色</span>
-                        <el-input size="mini" type="color" ></el-input>
-                    </div>
-                    <div>
-                        <span>样式</span>
-                        <el-input size="mini" type="number" ></el-input>
-                    </div>
-                </div>
-			</div>
-		</Popup>
+			</Popup>
+		</section>
+
 		<div
 			:class="['big-wiew', showBigStu?'big-wiew--show':'']"
 			:style="{height:hiddenHei?'0':'calc(100% - 150px)' }"
@@ -205,6 +414,7 @@
 				></ve-chart>
 			</div>
 		</div>
+
 		<!-- <el-dialog title="设置背景图" :visible.sync="dialogVisible" width="30%" :before-close="handleClose">
 			<span>这是一段信息</span>
 			<span slot="footer" class="dialog-footer">
@@ -216,12 +426,16 @@
 </template>
 
 <script>
+	import numbro from "numbro";
+
 	export default {
 		name: "DashBoard",
 		data() {
 			this.typeArr = ["line", "histogram", "pie", "ring"];
+			let img = require("@/assets/logo.png");
 			// this.activeIndex = 1;/
 			return {
+				// 图表数据
 				charData: {
 					columns: ["日期", "访问用户", "下单用户", "下单率"],
 					rows: [
@@ -264,6 +478,7 @@
 					],
 				},
 				activeIndex: 1,
+				// 画布大小
 				bodySize: {
 					width: 1880,
 					height: 967,
@@ -271,59 +486,91 @@
 					oldHeight: 967,
 				},
 				boxList: [
-					// {
-					// 	title: "饼图",
-					// 	width: 300,
-					// 	height: 300,
-					// 	top: 0,
-					// 	left: 0,
-					// 	zIndex: 1,
-					// 	type: "pie",
-					// 	settings: { type: "pie", offsetY: "50%" },
-					// 	index: 1,
-					// 	show: true,
-					// },
-					// {
-					// 	title: "柱状图",
-					// 	width: 300,
-					// 	height: 300,
-					// 	top: 0,
-					// 	left: 0,
-					// 	zIndex: 1,
-					// 	type: "histogram",
-					// 	settings: { type: "histogram" },
-					// 	index: 2,
-					// 	show: true,
-					// },
-					// {
-					// 	title: "折线图",
-					// 	width: 300,
-					// 	height: 300,
-					// 	top: 0,
-					// 	zIndex: 1,
-					// 	left: 0,
-					// 	type: "line",
-					// 	settings: { type: "line" },
-					// 	index: 3,
-					// 	show: true,
-					// },
+					{
+						title: "饼图",
+						width: 325,
+						height: 325,
+						top: 50,
+						left: 24,
+						zIndex: 1,
+						type: "pie",
+						settings: { type: "pie", offsetY: "50%" },
+						index: 1,
+						show: true,
+						style: {
+							headFColor: "#000", // 标题颜色
+							backgroundImage: "",
+							backgroundColor: "",
+							borderWidth: "0",
+							borderColor: "#000",
+							borderStyle: "solid",
+						},
+					},
+					{
+						title: "柱状图",
+						width: 884,
+						height: 502,
+						top: 420,
+						left: 24,
+						zIndex: 1,
+						type: "histogram",
+						settings: { type: "histogram" },
+						index: 2,
+						show: true,
+						style: {
+							headFColor: "#000", // 标题颜色
+							backgroundImage: "",
+							borderWidth: "0",
+							borderColor: "#000",
+							borderStyle: "solid",
+							backgroundColor: "",
+						},
+					},
+					{
+						title: "折线图",
+						width: 884,
+						height: 502,
+						top: 420,
+						zIndex: 1,
+						left: 969,
+						type: "line",
+						settings: { type: "line" },
+						index: 3,
+						show: true,
+						style: {
+							headFColor: "#000", // 标题颜色
+							backgroundImage: "",
+							borderWidth: "0",
+							borderColor: "#000",
+							borderStyle: "solid",
+							backgroundColor: "",
+						},
+					},
 					{
 						title: "这是一个好系统",
-						width: 300,
-						height: 300,
-						top: 0,
+						width: 372,
+						height: 102,
+						top: 19,
 						zIndex: 1,
-						left: 0,
+						left: 754,
 						type: "text",
 						index: 4,
 						show: true,
+						style: {
+							headFColor: "#000", // 标题颜色
+							backgroundImage: "",
+							borderWidth: "0",
+							borderColor: "#000",
+							borderStyle: "solid",
+							backgroundColor: "",
+						},
 					},
 					{
 						title: "环图",
-						width: 300,
-						height: 300,
-						top: 0,
-						left: 0,
+						width: 325,
+						height: 325,
+						top: 50,
+						left: 1528,
 						zIndex: 1,
 						type: "ring",
 						settings: {
@@ -333,19 +580,149 @@
 						},
 						index: 5,
 						show: true,
+						style: {
+							headFColor: "#000", // 标题颜色
+							backgroundImage: "",
+							borderWidth: "0",
+							borderColor: "#000",
+							borderStyle: "solid",
+							backgroundColor: "",
+						},
 					},
 					{
-						title: "环图",
-						width: 300,
-						height: 300,
-						top: 0,
-						left: 0,
+						title: "总投资金额",
+						width: 213,
+						height: 116,
+						top: 181.5,
+						left: 390,
 						zIndex: 1,
 						type: "numText",
 						index: 6,
 						show: true,
+						data: {
+							num: "10000",
+							remark: "总投资金额",
+						},
+						numSetting: {
+							thousandSeparated: true,
+						},
+						style: {
+							headFColor: "#000", // 标题颜色
+							backgroundImage: "",
+							borderWidth: "0",
+							borderColor: "#000",
+							borderStyle: "solid",
+							numColor: "#01fcff",
+							numWeight: true,
+							remarkColor: "#000",
+							numFSize: "32",
+							remarkFSize: "18",
+							remarkWeight: true,
+							marginB: "10",
+							backgroundColor: "",
+						},
+					},
+					{
+						title: "审减率",
+						width: 213,
+						height: 116,
+						top: 181.5,
+						left: 1276,
+						zIndex: 1,
+						type: "numText",
+						index: 7,
+						show: true,
+						data: {
+							num: "0.0103",
+							remark: "审减率",
+						},
+						numSetting: {
+							output: "percent",
+						},
+						style: {
+							headFColor: "#000", // 标题颜色
+							backgroundImage: "",
+							borderWidth: "0",
+							borderColor: "#000",
+							borderStyle: "solid",
+							numColor: "#01fcff",
+							numWeight: true,
+							remarkColor: "#000",
+							numFSize: "32",
+							remarkFSize: "18",
+							remarkWeight: true,
+							marginB: "10",
+							backgroundColor: "",
+						},
+					},
+					{
+						title: "审定投资金额(万元)",
+						width: 213,
+						height: 116,
+						top: 181.5,
+						left: 695,
+						zIndex: 1,
+						type: "numText",
+						index: 8,
+						show: true,
+						data: {
+							num: "8289",
+							remark: "审定投资金额(万元)",
+						},
+						numSetting: {
+							thousandSeparated: true,
+						},
+						style: {
+							headFColor: "#000", // 标题颜色
+							backgroundImage: "",
+							borderWidth: "0",
+							borderColor: "#000",
+							borderStyle: "solid",
+							numColor: "#01fcff",
+							numWeight: true,
+							remarkColor: "#000",
+							numFSize: "32",
+							remarkFSize: "18",
+							remarkWeight: true,
+							marginB: "10",
+							backgroundColor: "",
+						},
+					},
+					{
+						title: "报审投资金额(万元)",
+						width: 213,
+						height: 116,
+						top: 181.5,
+						left: 969,
+						zIndex: 1,
+						type: "numText",
+						index: 9,
+						show: true,
+						data: {
+							num: "8374",
+							remark: "报审投资金额(万元)",
+						},
+						numSetting: {
+							thousandSeparated: true,
+						},
+						style: {
+							headFColor: "#000", // 标题颜色
+							backgroundImage: "",
+							borderWidth: "0",
+							borderColor: "#000",
+							borderStyle: "solid",
+							numColor: "#01fcff",
+							numWeight: true,
+							remarkColor: "#000",
+							numFSize: "32",
+							remarkFSize: "18",
+							remarkWeight: true,
+							marginB: "10",
+							backgroundColor: "",
+						},
 					},
 				],
+				// x、y轴定位虚线
 				xStand: {
 					top: 0,
 					display: "none",
@@ -358,48 +735,118 @@
 				leftChange: "no",
 				topChange: "no",
 				addFuncTol: null,
-				throTimer: null,
+				// throTimer: null,
 				// 编辑长宽
 				editSizeStu: false,
 				drageStu: false,
-				editSizeInfo: {
-					left: 0,
-					top: 0,
-					width: 0,
-					height: 0,
-				},
+
+				// 数据编辑备份
 				backupData: {
 					left: 0,
 					top: 0,
 					width: 0,
 					height: 0,
 				},
+				// 当前编辑信息
 				titleE: "",
 				leftE: 0,
 				topE: 0,
 				widthE: 0,
 				heightE: 0,
-				currEditItem: null,
-				rundType: ["pie"],
+				borderSE: "solid",
+				currStyle: {
+					headFColor: "#fff",
+					backgroundImage: "",
+					borderWidth: "0",
+					borderColor: "#000",
+					borderStyle: "solid",
+					numColor: "#01fcff",
+					numWeight: true,
+					remarkColor: "#000",
+					numFSize: "32",
+					remarkFSize: "18",
+					remarkWeight: true,
+					marginB: "10",
+					backgroundColor: "#fff",
+					backgroundColorTran: true,
+				},
+				// 当前编辑对象
+				currEditItem: {},
+				// echar图重绘
 				resizeChar: null, // char图resize
+
+				// resize回调函数
 				resizeTh: null,
+
+				// 放大临时对象
 				currBig: { settings: {} },
+
 				showBigStu: false,
 				hiddenHei: true,
-				refreshDash: true,
 				reloadTimer: null,
 				upImageData: null, // 上传图片
+				borderStyle: [
+					{
+						label: "无边",
+						value: "none",
+					},
+					{
+						label: "点状",
+						value: "dotted",
+					},
+					{
+						label: "虚线",
+						value: "dashed",
+					},
+					{
+						label: "实线",
+						value: "solid",
+					},
+					{
+						label: "双线",
+						value: "double",
+					},
+				],
+				// 画布设置
+				editSizeStuCanv: false,
+				bodyStyle: {
+					backgroundImage: "",
+					backgroundColor: "#fff",
+				},
+				bodyStyleCp: {
+					backgroundImage: "",
+					backgroundColor: "#fff",
+				},
+
+				// 全局设置
+				editGlobal: false,
+				globalData: {
+					color: "#000",
+					borderWidth: "0",
+					borderColor: "#000",
+					borderStyle: "solid",
+					backgroundColor: "#fff",
+					backgroundColorTran: true,
+					borderRadius: "4",
+					backgroundImage: "",
+				},
+				// 遮罩打开状态
+				showShadeStu: false,
 			};
 		},
 		methods: {
-			beforUpImage(file) {
+			beforUpImage(file, type) {
 				this.statusEdit = true;
 				let filteDa = file;
 				var fileReader = new FileReader();
 				fileReader.readAsDataURL(filteDa);
 				// 读取操作完成触发
 				fileReader.onload = (e) => {
-					this.upImageData = e.target.result;
+					if (type) {
+						this[type].backgroundImage = e.target.result;
+					} else {
+						this.currStyle.backgroundImage = e.target.result;
+					}
 				};
 			},
 			// 添加背景图
@@ -474,7 +921,7 @@
 			},
 			resizeStop(newRect, itemObj) {
 				this.drageStu = false;
-				window.clearTimeout(self.throTimer);
+				// window.clearTimeout(self.throTimer);
 				if (this.topChange != "no") {
 					itemObj.top = this.topChange;
 				}
@@ -681,7 +1128,8 @@
 						this.xStand.display = "none";
 					}
 				}
-			},
+            },
+            // 快定位升级版
 			throttle(func, delay) {
 				let startTime = Date.now();
 				let self = this;
@@ -709,22 +1157,58 @@
 				this.widthE = obj.width;
 				this.leftE = obj.left;
 				this.topE = obj.top;
+				Object.assign(this.currStyle, obj.style);
+				this.currStyle.borderWidth = parseFloat(this.currStyle.borderWidth);
+				let url = /^url\((.+)\)$/g.exec(this.currStyle.backgroundImage);
+				this.currStyle.backgroundImage = (url && url[1]) || "";
+				this.currStyle.backgroundColor = this.currStyle.backgroundColor;
+				if (this.currStyle.backgroundColor != "transparent") {
+					this.currStyle.backgroundColorTran = false;
+				} else {
+					this.currStyle.backgroundColorTran = true;
+				}
 				this.currEditItem = obj;
 				this.editSizeStu = true;
 				this.$refs.eidtTitle.focus();
 			},
 			cachEdit() {
 				this.editSizeStu = false;
-				// this.currEditItem.top = this.backupData.top;
-				// this.currEditItem.left = this.backupData.left;
-				// this.currEditItem.width = this.backupData.width;
-				// this.currEditItem.height = this.backupData.height;
-				// this.currEditItem.title = this.backupData.title;
+				this.currEditItem.top = this.backupData.top;
+				this.currEditItem.left = this.backupData.left;
+				this.currEditItem.width = this.backupData.width;
+				this.currEditItem.height = this.backupData.height;
+				this.currEditItem.title = this.backupData.title;
 			},
 			confirmEdit() {
 				this.editSizeStu = false;
-				this.currEditItem = null;
+				let cpData = JSON.parse(JSON.stringify(this.currStyle));
+				cpData.borderWidth += "px";
+				cpData.backgroundImage = `url(${cpData.backgroundImage})`;
+				if (cpData.backgroundColorTran) {
+					cpData.backgroundColor = "transparent";
+				}
+				delete cpData.backgroundColorTran;
+				this.currEditItem.style = cpData;
+				this.resizeCharFun(this.currEditItem);
+				this.currStyle = {
+					backgroundImage: "",
+					borderWidth: "0",
+					borderColor: "#000",
+					borderStyle: "solid",
+					numColor: "#01fcff",
+					remarkColor: "#000",
+					numFSize: "32",
+					remarkFSize: "18",
+					marginB: "10",
+					numWeight: true,
+					remarkWeight: true,
+					backgroundColorTran: true,
+					backgroundColor: true,
+					headFColor: "#000",
+				};
+				this.currEditItem = {};
 			},
+			dealStyleIn(obj) {},
 			reloadSize(ev) {
 				this.editSizeStu = false;
 				if (this.$refs.dashBody) {
@@ -749,6 +1233,48 @@
 						});
 					});
 				}
+			},
+			// 画布设置
+			cachEditCanv() {
+				this.editSizeStuCanv = false;
+				this.bodyStyle = JSON.parse(this.bodyStyleCp);
+				this.bodyStyleCp = "";
+			},
+			confirmEditCanv() {
+				this.editSizeStuCanv = false;
+				this.bodyStyleCp = "";
+			},
+			editBodyS() {
+				this.editSizeStuCanv = true;
+				this.bodyStyleCp = JSON.stringify(this.bodyStyle);
+			},
+			// 全局设置
+			cachEditGlobal() {
+				this.editGlobal = false;
+			},
+			confirmEditGlobal() {
+				this.boxList.forEach((item) => {
+					item.style.headFColor = this.globalData.color;
+					item.style.backgroundImage = `url(${this.globalData.backgroundImage})`;
+					item.style.backgroundColor = this.globalData.backgroundColorTran
+						? "transparent"
+						: this.globalData.backgroundColor;
+					item.style.borderWidth = this.globalData.borderWidth + "px";
+					item.style.borderColor = this.globalData.borderColor;
+					item.style.borderStyle = this.globalData.borderStyle;
+					item.style.borderRadius = this.globalData.borderRadius + "px";
+				});
+				this.editGlobal = false;
+			},
+			editGlobalS() {
+                this.editSizeStu = false;
+				this.showShadeStu = true;
+				setTimeout(() => {
+					this.editGlobal = true;
+				}, 0);
+			},
+			closeShadow() {
+				this.editGlobal = false;
 			},
 		},
 		mounted() {
@@ -843,9 +1369,21 @@
 					}, 500);
 				}
 			},
+			editGlobal(newV) {
+				if (!newV) {
+					setTimeout(() => {
+						this.showShadeStu = false;
+					}, 400);
+				}
+			},
 		},
 		destroyed() {
 			window.removeEventListener("resize", this.resizeTh);
+		},
+		filters: {
+			formatNum(value, setting) {
+				return numbro(value).format(setting);
+			},
 		},
 	};
 </script>
@@ -864,6 +1402,8 @@
 		z-index: 0;
 		height: 100%;
 		background-color: #fff;
+		background-repeat: no-repeat;
+		background-size: 100% 100%;
 	}
 	.drag-box {
 		width: 100%;
@@ -880,10 +1420,13 @@
 		border-radius: 4px;
 		// padding: 0 10px 10px 10px;
 		box-sizing: border-box;
-		background-color: #fff;
+		// background-color: #fff;
 		&:hover .head-menu {
 			display: flex;
 		}
+		background-size: 100% 100%;
+		box-sizing: border-box;
+		background-repeat: no-repeat;
 	}
 	.header-title {
 		height: 100%;
@@ -926,6 +1469,7 @@
 		top: 5px;
 	}
 	.head-menu {
+		background-color: #fff;
 		display: none;
 		border-radius: 2em;
 		border-top: 1px solid transparent;
@@ -1011,6 +1555,9 @@
 		width: 80px;
 		flex-grow: 1;
 	}
+	.form-size .inp-title .el-input {
+		width: auto;
+	}
 	.big-wiew {
 		position: absolute;
 		z-index: 99999;
@@ -1057,7 +1604,7 @@
 			height: 100%;
 			width: 100%;
 		}
-        vertical-align: bottom;
+		vertical-align: bottom;
 		margin-right: 10px;
 		& .el-upload {
 			border-radius: 6px;
@@ -1081,24 +1628,103 @@
 			border-color: #409eff;
 		}
 	}
-    .upimg-menu{
-        display: inline-block;
-        // height: 100px;
-    }
-    .border-inp{
-        display: flex;
-        align-items: center;
-        font-size: 14px;
-        &>div{
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 30%;
-        }
-        .el-input{
-            width: 50px;
-            flex-grow: 0;
-            margin-left: 5px;;
-        }
-    }
+	.upimg-menu {
+		display: inline-block;
+		// height: 100px;
+	}
+	.border-inp {
+		display: flex;
+		align-items: center;
+		// justify-content: center;
+		font-size: 14px;
+		& > div {
+			display: flex;
+			align-items: center;
+			// justify-content: center;
+			// width: 30%;
+			width: 30%;
+		}
+		& > div + div {
+			margin-left: 10px;
+		}
+		& > .border-edit .el-select {
+			// margin-left: 5px;
+			width: 86px;
+		}
+		span {
+			flex-shrink: 0;
+			margin-right: 4px;
+		}
+		.el-input {
+			width: 50px;
+			flex-grow: 0;
+			// margin-left: 5px;
+		}
+	}
+	.drag-num {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+	}
+	.cvs-set {
+		position: absolute;
+		bottom: 20px;
+		cursor: pointer;
+		right: 20px;
+		z-index: 10;
+	}
+	.set-item {
+		border-radius: 50%;
+		background-color: #fff;
+		width: 40px;
+		height: 40px;
+		border-radius: 50%;
+		color: #409eff;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		// opacity: .5;
+		font-size: 20px;
+		box-shadow: 0 0 6px rgba(0, 0, 0, 0.12);
+		transition-property: opacity, background-color;
+		transition-duration: 0.2s;
+		&:hover {
+			background-color: #f2f6fc;
+		}
+		& ~ div {
+			margin-top: 10px;
+		}
+	}
+	.inp-padding {
+		padding: 0 10px;
+	}
+	.title-two {
+		font-size: 14px;
+		margin-left: 10px;
+		margin-top: 6px;
+	}
+	.maring-t14 {
+		margin-top: 14px;
+	}
+	.inp-title {
+		display: flex;
+		align-items: center;
+		& > div.el-input {
+			flex-grow: 0;
+		}
+		&--color {
+			width: 50px !important;
+			margin-left: 10px;
+		}
+	}
+	.shade {
+		position: absolute;
+		height: 100%;
+		width: 100%;
+		top: 0;
+		left: 0;
+		background-color: transparent;
+		z-index: 100;
+	}
 </style>
