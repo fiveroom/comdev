@@ -40,4 +40,7 @@
 	input[type="number"] {
 		-moz-appearance: textfield;
 	}
+  *:focus{
+    outline: none;
+  }
 </style>

@@ -44,11 +44,14 @@
 							>{{item.title + item.index}}</span>
 							<ul class="head-menu head-abso" @mousedown.stop>
 								<i class="el-icon-edit" title="编辑样式" @click="editSize(item)"></i>
-								<i class="el-icon-coin" title="编辑数据"></i>
+								<i class="el-icon-coin" title="编辑数据" @click="addDataTo(item)"></i>
 								<div class="head-menu-more">
 									<i class="el-icon-menu" title="更多"></i>
 									<div class="menu-ul">
 										<ul>
+											<li class="menu-li-border">
+												<i class="el-icon-link" @click="bindLink(item)" title="绑定链接"></i>
+											</li>
 											<li class="menu-li-border">
 												<i class="iconfont icon-jianzhujianju" @click="blockInterval(item)" title="间距"></i>
 											</li>
@@ -64,6 +67,7 @@
 										</ul>
 									</div>
 								</div>
+								<i class="el-icon-delete-solid" title="删除" @click="deleteBox(item)"></i>
 							</ul>
 						</header>
 						<div class="drag-box" @mousedown.stop>
@@ -80,18 +84,18 @@
 					</template>
 					<template v-else-if="item.type == 'text'">
 						<div class="drag-head">
-							<ul class="head-abso head-menu" @mousedown.stop>
+							<div class="head-abso head-menu" @mousedown.stop>
 								<i class="el-icon-edit" title="编辑样式" @click="editSize(item)"></i>
-								<i class="el-icon-coin" title="编辑数据"></i>
+								<i class="el-icon-coin" title="编辑数据" @click="addDataTo(item)"></i>
 								<div class="head-menu-more">
 									<i class="el-icon-menu" title="更多"></i>
 									<div class="menu-ul">
 										<ul>
 											<li class="menu-li-border">
-												<i class="iconfont icon-jianzhujianju" @click="blockInterval(item)" title="间距"></i>
+												<i class="el-icon-link" @click="bindLink(item)" title="绑定链接"></i>
 											</li>
 											<li class="menu-li-border">
-												<i class="el-icon-zoom-in" title="放大" @click="showBig(item)"></i>
+												<i class="iconfont icon-jianzhujianju" @click="blockInterval(item)" title="间距"></i>
 											</li>
 											<li>
 												<i class="el-icon-caret-top" title="向上" @click="topEle(item)"></i>
@@ -102,7 +106,8 @@
 										</ul>
 									</div>
 								</div>
-							</ul>
+								<i class="el-icon-delete-solid" title="删除" @click="deleteBox(item)"></i>
+							</div>
 							<h1
 								class="header-title"
 								:style="{
@@ -113,32 +118,34 @@
 					</template>
 					<template v-else-if="item.type == 'numText'">
 						<div class="drag-head drag-num">
-							<ul class="head-abso head-menu" @mousedown.stop>
+							<div class="head-abso head-menu" @mousedown.stop>
 								<i class="el-icon-edit" title="编辑样式" @click="editSize(item)"></i>
-								<i class="el-icon-coin" title="编辑数据"></i>
+								<i class="el-icon-coin" title="编辑数据" @click="addDataTo(item)"></i>
 								<div class="head-menu-more">
 									<i class="el-icon-menu" title="更多"></i>
 									<div class="menu-ul">
 										<ul>
 											<li class="menu-li-border">
-												<i class="iconfont icon-jianzhujianju" @click="blockInterval(item)" title="间距"></i>
+												<i class="el-icon-link" @click="bindLink(item)" title="绑定链接"></i>
 											</li>
 											<li class="menu-li-border">
-												<i class="el-icon-zoom-in" title="放大" @click="showBig(item)"></i>
+												<i class="iconfont icon-jianzhujianju" @click="blockInterval(item)" title="间距"></i>
 											</li>
 											<li>
 												<i class="el-icon-caret-top" title="向上" @click="topEle(item)"></i>
 											</li>
-											<li class="menu-li-border">
+											<li>
 												<i class="el-icon-caret-bottom" title="向下" @click="bottomEle(item)"></i>
 											</li>
+
 											<!-- <li>
 												<i class="iconfont icon-beijingtu" title="添加背景图" @click="addBgcBox(item)"></i>
 											</li>-->
 										</ul>
 									</div>
 								</div>
-							</ul>
+								<i class="el-icon-delete-solid" title="删除" @click="deleteBox(item)"></i>
+							</div>
 							<span
 								class="number"
 								:style="{
@@ -174,12 +181,11 @@
                 top: item.top + 'px',
             }"
 			></div>
-
 			<div class="cvs-set">
 				<div class="set-item" title="预览" @click="$router.push('/dboardShow')">
 					<i class="el-icon-view"></i>
 				</div>
-				<div class="set-item" title="新建" @click="newBlock">
+				<div class="set-item" title="新建" @click="dialogVisible = true">
 					<i class="el-icon-circle-plus-outline"></i>
 				</div>
 				<!-- <div class="set-item" title="间距">
@@ -473,6 +479,41 @@
 		</div>
 		<div class="inter-x"></div>
 		<div class="inter-y"></div>
+		<el-dialog title="添加盒子" :visible.sync="dialogVisible" width="20%">
+			<div class="box-option box-option--one" @click="addBlock('text')">
+				<span>文本</span>
+				<div>
+					<i class="iconfont icon-wenben"></i>
+				</div>
+			</div>
+			<div class="box-option box-option--two" @click="addBlock('numText')">
+				<span>数字</span>
+				<div>
+					<i class="iconfont icon-shuzi"></i>
+				</div>
+			</div>
+			<div class="box-option box-option--three" @click="addBlock('picTable')">
+				<span>图表格</span>
+				<div>
+					<i class="iconfont icon-zizengbiaoge"></i>
+					<i class="iconfont icon-tubiao1"></i>
+					<i class="iconfont icon-tubiao"></i>
+				</div>
+			</div>
+		</el-dialog>
+		<el-dialog title="选择数据" :visible.sync="dialogData" width="30%">
+			<div slot="footer" class="dialog-footer">
+				<el-button @click="dialogData = false" size="small">取 消</el-button>
+				<el-button type="primary" @click="dialogData = false" size="small">确 定</el-button>
+			</div>
+		</el-dialog>
+		<el-dialog title="绑定链接" :visible.sync="digLink" width="30%" @close="addLinkValue = ''">
+			<el-input size="small" clearable v-model="addLinkValue"></el-input>
+			<div slot="footer" class="dialog-footer">
+				<el-button @click="digLink = false; addLinkValue = ''" size="small">取 消</el-button>
+				<el-button type="primary" @click="comfirmAddL" size="small">确 定</el-button>
+			</div>
+		</el-dialog>
 	</div>
 </template>
 
@@ -534,6 +575,8 @@
 					height: 967,
 					oldWidth: 1880,
 					oldHeight: 967,
+					backgroundImage: "",
+					backgroundColor: "#ffffff",
 				},
 				boxList: [
 					{
@@ -933,6 +976,15 @@
 				editInter: false,
 				interShadeStu: false,
 				currInterObj: null,
+
+				// 快间距对比
+				equalInterArr: [],
+
+				dialogVisible: false, // 添加盒子
+				dialogData: false, // 添加数据
+				currAddItem: null,
+				digLink: false, // 添加链接
+				addLinkValue: "", // 链接
 			};
 		},
 		methods: {
@@ -1440,7 +1492,33 @@
 						return this.blockInterValue.find((it) => it.type == "left");
 				}
 			},
-
+			// 计算块间距相等的位置
+			findEqualInter(newRect) {
+				// 纵向
+				let xResArr = [];
+				this.findXEqual(newRect, xResArr);
+				// 横向
+			},
+			findXEqual(newRect, resArr) {
+				let xArr = [];
+				let yArr = [];
+				this.boxList.forEach((item) => {
+					if (item.index != newRect.index) {
+						if (
+							item.left >= newRect.left + newRect.width ||
+							item.left + item.width <= newRect.left
+						) {
+							xArr.push(item);
+						}
+						if (
+							item.top >= newRect.top + newRect.height ||
+							item.top + item.height <= newRect.top
+						) {
+							yArr.push(item);
+						}
+					}
+				});
+			},
 			interDatumLine(obj) {},
 			throttle(func, delay) {
 				let startTime = Date.now();
@@ -1620,10 +1698,74 @@
 			closeInterShadow() {
 				this.editInter = false;
 				this.blockInterArr = [];
-            },
-            newBlock(){
-                
-            }
+			},
+			newBlock() {
+				this.dialogVisible = true;
+			},
+			// 添加盒子
+			addBlock(type) {
+				let maxId = Math.max.apply(
+					null,
+					this.boxList.map((it) => it.index)
+				);
+				let obj = {
+					title: "编辑",
+					width: 325,
+					height: 325,
+					top: 50,
+					left: 24,
+					zIndex: 1,
+					type,
+					index: ++maxId,
+					show: true,
+					style: {
+						headFColor: "#000", // 标题颜色
+						headWeight: false,
+						headFSize: "16",
+						backgroundImage: "",
+						backgroundColor: "#fff",
+						borderWidth: "0",
+						borderColor: "#000",
+						borderStyle: "solid",
+					},
+					data: {},
+				};
+				if (type == "numText") {
+					obj.width = 213;
+					obj.height = 116;
+				}
+				if (type == "text") {
+					obj.width = 370;
+					obj.height = 100;
+				}
+				this.boxList.push(obj);
+				this.dialogVisible = false;
+			},
+			// 删除盒子
+			deleteBox(item) {
+				this.boxList.splice(
+					this.boxList.findIndex((it) => it.index == item.index),
+					1
+				);
+			},
+			// 编辑数据
+			addDataTo(item) {
+				this.dialogData = true;
+				this.currAddItem = item;
+			},
+			comfrimAddDataTo() {
+				this.dialogData = false;
+				this.currAddItem = null;
+			},
+			// 绑定链接
+			bindLink(item) {
+				this.addLinkValue = "";
+				this.digLink = true;
+			},
+			comfirmAddL() {
+				this.addLinkValue = "";
+				this.digLink = false;
+			},
 		},
 		mounted() {
 			this.reloadSize();
@@ -1857,7 +1999,7 @@
 				background-color: rgba(0, 0, 0, 0.2);
 			}
 		}
-		& i + i {
+		& i ~ i {
 			margin-left: 10px;
 		}
 		&-more {
@@ -2106,5 +2248,86 @@
 			margin-bottom: 15px;
 		}
 		flex-wrap: wrap;
+	}
+	// 添加盒子
+	// ::v-deep .el-drawer.rtl:focus {
+	// 	outline: none;
+	// }
+	// .dra-big-title {
+	// 	line-height: 60px;
+	// 	height: 60px;
+	// 	margin: 0;
+	// 	font-size: 18px;
+	// 	color: #262626;
+	// 	vertical-align: middle;
+	// 	color: #373d41;
+	// 	border-bottom: 1px solid #efefef;
+	// }
+	// .drawer__body,
+	// .drawer__footer,
+	// .dra-big-title {
+	// 	padding: 0 24px;
+	// }
+	// .dra-box {
+	// 	& > header {
+	// 		font-size: 14px;
+	// 		padding: 10px 0;
+	// 	}
+	// }
+	// .drawer__footer {
+	// 	border-top: 1px solid #efefef;
+	// 	height: 60px;
+	// 	line-height: 60px;
+	// }
+	// .drawer__body {
+	// 	height: calc(100% - 120px);
+	// }
+	// .drag-inp-item {
+	// 	span {
+	// 		font-size: 14px;
+	// 		margin-bottom: 15px;
+	// 		display: inline-block;
+	// 	}
+	// }
+	// .drag-inp-item ~ div {
+	// 	margin-top: 15px;
+	// }
+	.box-option {
+		color: #fff;
+		border-radius: 4px;
+		display: flex;
+		justify-content: space-between;
+		padding: 0 10px;
+		height: 60px;
+		align-items: center;
+		cursor: pointer;
+		& span {
+			font-size: 14px;
+		}
+		& + div {
+			margin-top: 15px;
+		}
+		& > div > i + i {
+			margin-left: 10px;
+		}
+		transition: box-shadow 0.2s;
+		&--one {
+			background-color: skyblue;
+			&:hover {
+				box-shadow: 0px 0px 6px 0px rgba(135, 206, 235, 0.8);
+			}
+		}
+		&--two {
+			background-color: skyblue;
+			&:hover {
+				box-shadow: 0px 0px 6px 0px rgba(135, 206, 235, 0.8);
+			}
+		}
+		&--three {
+			background-color: skyblue;
+			&:hover {
+				box-shadow: 0px 0px 6px 0px rgba(135, 206, 235, 0.8);
+			}
+		}
 	}
 </style>
