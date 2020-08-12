@@ -37,16 +37,21 @@
 						<header class="chart-head">
 							<span
 								:style="{
-                                color: item.style.headFColor
+                                color: item.style.headFColor,
+                                fontSize: item.style.headFSize + 'px',
+                                fontWeight: item.style.headWeight && 'bolder' || 'normal',
                                 }"
 							>{{item.title + item.index}}</span>
 							<ul class="head-menu head-abso" @mousedown.stop>
-								<i class="el-icon-edit" title="编辑尺寸" @click="editSize(item)"></i>
-								<i class="el-icon-coin" title="编辑样式"></i>
+								<i class="el-icon-edit" title="编辑样式" @click="editSize(item)"></i>
+								<i class="el-icon-coin" title="编辑数据"></i>
 								<div class="head-menu-more">
 									<i class="el-icon-menu" title="更多"></i>
 									<div class="menu-ul">
 										<ul>
+											<li class="menu-li-border">
+												<i class="iconfont icon-jianzhujianju" @click="blockInterval(item)" title="间距"></i>
+											</li>
 											<li class="menu-li-border">
 												<i class="el-icon-zoom-in" title="放大" @click="showBig(item)"></i>
 											</li>
@@ -76,12 +81,15 @@
 					<template v-else-if="item.type == 'text'">
 						<div class="drag-head">
 							<ul class="head-abso head-menu" @mousedown.stop>
-								<i class="el-icon-edit" title="编辑尺寸" @click="editSize(item)"></i>
+								<i class="el-icon-edit" title="编辑样式" @click="editSize(item)"></i>
 								<i class="el-icon-coin" title="编辑数据"></i>
 								<div class="head-menu-more">
 									<i class="el-icon-menu" title="更多"></i>
 									<div class="menu-ul">
 										<ul>
+											<li class="menu-li-border">
+												<i class="iconfont icon-jianzhujianju" @click="blockInterval(item)" title="间距"></i>
+											</li>
 											<li class="menu-li-border">
 												<i class="el-icon-zoom-in" title="放大" @click="showBig(item)"></i>
 											</li>
@@ -106,12 +114,15 @@
 					<template v-else-if="item.type == 'numText'">
 						<div class="drag-head drag-num">
 							<ul class="head-abso head-menu" @mousedown.stop>
-								<i class="el-icon-edit" title="编辑尺寸" @click="editSize(item)"></i>
+								<i class="el-icon-edit" title="编辑样式" @click="editSize(item)"></i>
 								<i class="el-icon-coin" title="编辑数据"></i>
 								<div class="head-menu-more">
 									<i class="el-icon-menu" title="更多"></i>
 									<div class="menu-ul">
 										<ul>
+											<li class="menu-li-border">
+												<i class="iconfont icon-jianzhujianju" @click="blockInterval(item)" title="间距"></i>
+											</li>
 											<li class="menu-li-border">
 												<i class="el-icon-zoom-in" title="放大" @click="showBig(item)"></i>
 											</li>
@@ -141,9 +152,9 @@
 								class="remark"
 								v-text="item.title"
 								:style="{
-                                'font-size': item.style.remarkFSize + 'px',
-                                'color': item.style.remarkColor,
-                                'font-weight': item.style.remarkWeight && 'bolder' || '',
+                                'font-size': item.style.headFSize + 'px',
+                                'color': item.style.headFColor,
+                                'font-weight': item.style.headWeight && 'bolder' || '',
                             }"
 							></span>
 						</div>
@@ -152,10 +163,28 @@
 			</template>
 			<div class="stand stand-x" :style="xStand"></div>
 			<div class="stand stand-y" :style="yStand"></div>
+			<div
+				v-for="item in blockInterArr"
+				:key="item.type"
+				:class="['stand', item.height == 0?'stand-x':'stand-y']"
+				:style="{
+                width: item.width + 'px',
+                height: item.height + 'px',
+                left: item.left + 'px',
+                top: item.top + 'px',
+            }"
+			></div>
+
 			<div class="cvs-set">
 				<div class="set-item" title="预览" @click="$router.push('/dboardShow')">
 					<i class="el-icon-view"></i>
 				</div>
+				<div class="set-item" title="新建" @click="newBlock">
+					<i class="el-icon-circle-plus-outline"></i>
+				</div>
+				<!-- <div class="set-item" title="间距">
+					<i class="el-icon-crop"></i>
+				</div>-->
 				<div class="set-item" title="全局设置" @click="editGlobalS">
 					<i class="el-icon-monitor"></i>
 				</div>
@@ -173,9 +202,20 @@
 					@click.native.stop
 				>
 					<div class="form-size" @keyup.enter="confirmEditGlobal">
-						<div class="mini-title">标题颜色</div>
-						<div class="inp-padding">
-							<el-input size="mini" type="color" v-model="globalData.color"></el-input>
+						<div class="mini-title">标题</div>
+						<div class="border-inp inp-padding">
+							<div>
+								<span>大小</span>
+								<el-input size="mini" type="number" v-model="globalData.headFSize"></el-input>
+							</div>
+							<div>
+								<span>颜色</span>
+								<el-input size="mini" type="color" v-model="globalData.headFColor"></el-input>
+							</div>
+							<div>
+								<span>加粗</span>
+								<el-checkbox size="mini" v-model="globalData.headWeight"></el-checkbox>
+							</div>
 						</div>
 						<div class="mini-title">块边框</div>
 						<div class="border-inp inp-padding">
@@ -234,6 +274,31 @@
 					</div>
 				</Popup>
 			</div>
+			<div class="shade" v-show="interShadeStu" @click="closeInterShadow">
+				<Popup
+					:showPp="editInter"
+					title="间距调整"
+					@catchEv="cachEditInter"
+					@confirm="confirmEditInter"
+					@closeEv="cachEditInter"
+					@click.native.stop
+				>
+					<div class="form-size" @keyup.enter="confirmEditInter">
+						<div class="two-item">
+							<div v-for="(item, index) in blockInterValue" :key="index">
+								<span>{{item.type | changeCh}}</span>
+								<el-input
+									size="mini"
+									type="number"
+									@input="val => blurValue(val, item)"
+									v-model="item.value"
+									:ref="`interO${index}`"
+								></el-input>
+							</div>
+						</div>
+					</div>
+				</Popup>
+			</div>
 			<Popup
 				:showPp="editSizeStu"
 				title="编辑"
@@ -242,18 +307,26 @@
 				@closeEv="cachEdit"
 			>
 				<div class="form-size" @keyup.enter="confirmEdit">
-					<!-- <div class="form-items"> -->
 					<div class="mini-title">标题</div>
 					<div class="inp-title inp-padding">
 						<el-input size="small" v-model="titleE" ref="eidtTitle"></el-input>
-						<el-input size="mini" class="inp-title--color" type="color" v-model="currStyle.headFColor"></el-input>
+					</div>
+					<div class="mini-title">标题样式</div>
+					<div class="border-inp inp-padding">
+						<div>
+							<span>大小</span>
+							<el-input size="mini" type="number" v-model="currStyle.headFSize"></el-input>
+						</div>
+						<div>
+							<span>颜色</span>
+							<el-input size="mini" type="color" v-model="currStyle.headFColor"></el-input>
+						</div>
+						<div>
+							<span>加粗</span>
+							<el-checkbox size="mini" v-model="currStyle.headWeight"></el-checkbox>
+						</div>
 					</div>
 					<div class="mini-title">位置信息</div>
-					<!-- <div class="form-inp">
-					<span>标题</span>
-					<el-input size="small" v-model="titleE" ref="eidtTitle"></el-input>
-					</div>-->
-					<!-- </div> -->
 					<div class="form-items inp-padding">
 						<div class="form-inp">
 							<span>距左边框</span>
@@ -289,7 +362,6 @@
 						</el-upload>
 						<div class="upimg-menu">
 							<el-button plain size="small" type="danger" @click="currStyle.backgroundImage = ''">移除</el-button>
-							<!-- <el-button plain size="small" type="primary">应用所有</el-button> -->
 						</div>
 					</div>
 					<div class="mini-title">块背景颜色</div>
@@ -299,6 +371,7 @@
 							<el-checkbox size="mini" v-model="currStyle.backgroundColorTran"></el-checkbox>
 						</div>
 						<div>
+							<span>颜色</span>
 							<el-input size="mini" type="color" v-model="currStyle.backgroundColor"></el-input>
 						</div>
 					</div>
@@ -326,7 +399,6 @@
 					</div>
 					<div v-if="currEditItem.type == 'numText'">
 						<div class="mini-title">文本格式</div>
-						<div class="title-two maring-t14">数字</div>
 						<div class="border-inp inp-padding maring-t14">
 							<div>
 								<span>大小</span>
@@ -339,21 +411,6 @@
 							<div>
 								<span>加粗</span>
 								<el-checkbox size="mini" v-model="currStyle.numWeight"></el-checkbox>
-							</div>
-						</div>
-						<div class="title-two maring-t14">文本</div>
-						<div class="border-inp inp-padding maring-t14">
-							<div>
-								<span>大小</span>
-								<el-input size="mini" type="number" v-model="currStyle.remarkFSize"></el-input>
-							</div>
-							<div>
-								<span>颜色</span>
-								<el-input size="mini" type="color" v-model="currStyle.remarkColor"></el-input>
-							</div>
-							<div>
-								<span>加粗</span>
-								<el-checkbox size="mini" v-model="currStyle.remarkWeight"></el-checkbox>
 							</div>
 						</div>
 						<div class="title-two maring-t14">上下间距</div>
@@ -370,7 +427,7 @@
 				@confirm="confirmEditCanv"
 				@closeEv="cachEditCanv"
 			>
-				<div class="form-size" @keyup.enter="confirmEdit">
+				<div class="form-size" @keyup.enter="confirmEditCanv">
 					<!-- <div class="form-items"> -->
 					<div class="mini-title">背景图片</div>
 					<div class="inp-padding">
@@ -414,14 +471,8 @@
 				></ve-chart>
 			</div>
 		</div>
-
-		<!-- <el-dialog title="设置背景图" :visible.sync="dialogVisible" width="30%" :before-close="handleClose">
-			<span>这是一段信息</span>
-			<span slot="footer" class="dialog-footer">
-				<el-button @click="dialogVisible = false">取 消</el-button>
-				<el-button type="primary" @click="dialogVisible = false">确 定</el-button>
-			</span>
-		</el-dialog>-->
+		<div class="inter-x"></div>
+		<div class="inter-y"></div>
 	</div>
 </template>
 
@@ -433,7 +484,6 @@
 		data() {
 			this.typeArr = ["line", "histogram", "pie", "ring"];
 			let img = require("@/assets/logo.png");
-			// this.activeIndex = 1;/
 			return {
 				// 图表数据
 				charData: {
@@ -499,6 +549,8 @@
 						show: true,
 						style: {
 							headFColor: "#000", // 标题颜色
+							headWeight: false,
+							headFSize: "16",
 							backgroundImage: "",
 							backgroundColor: "",
 							borderWidth: "0",
@@ -519,6 +571,8 @@
 						show: true,
 						style: {
 							headFColor: "#000", // 标题颜色
+							headWeight: false,
+							headFSize: "16",
 							backgroundImage: "",
 							borderWidth: "0",
 							borderColor: "#000",
@@ -539,6 +593,8 @@
 						show: true,
 						style: {
 							headFColor: "#000", // 标题颜色
+							headWeight: false,
+							headFSize: "16",
 							backgroundImage: "",
 							borderWidth: "0",
 							borderColor: "#000",
@@ -558,6 +614,8 @@
 						show: true,
 						style: {
 							headFColor: "#000", // 标题颜色
+							headWeight: false,
+							headFSize: "16",
 							backgroundImage: "",
 							borderWidth: "0",
 							borderColor: "#000",
@@ -582,6 +640,8 @@
 						show: true,
 						style: {
 							headFColor: "#000", // 标题颜色
+							headWeight: false,
+							headFSize: "16",
 							backgroundImage: "",
 							borderWidth: "0",
 							borderColor: "#000",
@@ -608,16 +668,18 @@
 						},
 						style: {
 							headFColor: "#000", // 标题颜色
+							headWeight: true,
+							headFSize: "18",
 							backgroundImage: "",
 							borderWidth: "0",
 							borderColor: "#000",
 							borderStyle: "solid",
 							numColor: "#01fcff",
 							numWeight: true,
-							remarkColor: "#000",
+							// remarkColor: "#000",
 							numFSize: "32",
-							remarkFSize: "18",
-							remarkWeight: true,
+							// remarkFSize: "18",
+							// remarkWeight: true,
 							marginB: "10",
 							backgroundColor: "",
 						},
@@ -641,16 +703,18 @@
 						},
 						style: {
 							headFColor: "#000", // 标题颜色
+							headWeight: true,
+							headFSize: "18",
 							backgroundImage: "",
 							borderWidth: "0",
 							borderColor: "#000",
 							borderStyle: "solid",
 							numColor: "#01fcff",
 							numWeight: true,
-							remarkColor: "#000",
+							// remarkColor: "#000",
 							numFSize: "32",
-							remarkFSize: "18",
-							remarkWeight: true,
+							// remarkFSize: "18",
+							// remarkWeight: true,
 							marginB: "10",
 							backgroundColor: "",
 						},
@@ -674,16 +738,18 @@
 						},
 						style: {
 							headFColor: "#000", // 标题颜色
+							headWeight: true,
+							headFSize: "18",
 							backgroundImage: "",
 							borderWidth: "0",
 							borderColor: "#000",
 							borderStyle: "solid",
 							numColor: "#01fcff",
 							numWeight: true,
-							remarkColor: "#000",
+							// remarkColor: "#000",
 							numFSize: "32",
-							remarkFSize: "18",
-							remarkWeight: true,
+							// remarkFSize: "18",
+							// remarkWeight: true,
 							marginB: "10",
 							backgroundColor: "",
 						},
@@ -707,16 +773,18 @@
 						},
 						style: {
 							headFColor: "#000", // 标题颜色
+							headWeight: true,
+							headFSize: "18",
 							backgroundImage: "",
 							borderWidth: "0",
 							borderColor: "#000",
 							borderStyle: "solid",
 							numColor: "#01fcff",
 							numWeight: true,
-							remarkColor: "#000",
+							// remarkColor: "#000",
 							numFSize: "32",
-							remarkFSize: "18",
-							remarkWeight: true,
+							// remarkFSize: "18",
+							// remarkWeight: true,
 							marginB: "10",
 							backgroundColor: "",
 						},
@@ -755,19 +823,21 @@
 				heightE: 0,
 				borderSE: "solid",
 				currStyle: {
-					headFColor: "#fff",
+					headWeight: false,
+					headFSize: "16",
+					headFColor: "#ffffff",
 					backgroundImage: "",
 					borderWidth: "0",
 					borderColor: "#000",
 					borderStyle: "solid",
 					numColor: "#01fcff",
 					numWeight: true,
-					remarkColor: "#000",
+					// remarkColor: "#000",
 					numFSize: "32",
-					remarkFSize: "18",
-					remarkWeight: true,
+					// remarkFSize: "18",
+					// remarkWeight: true,
 					marginB: "10",
-					backgroundColor: "#fff",
+					backgroundColor: "#ffffff",
 					backgroundColorTran: true,
 				},
 				// 当前编辑对象
@@ -811,27 +881,58 @@
 				editSizeStuCanv: false,
 				bodyStyle: {
 					backgroundImage: "",
-					backgroundColor: "#fff",
+					backgroundColor: "#ffffff",
 				},
 				bodyStyleCp: {
 					backgroundImage: "",
-					backgroundColor: "#fff",
+					backgroundColor: "#ffffff",
 				},
 
 				// 全局设置
 				editGlobal: false,
 				globalData: {
-					color: "#000",
+					headWeight: false,
+					headFSize: "16",
+					headFColor: "#000",
 					borderWidth: "0",
 					borderColor: "#000",
 					borderStyle: "solid",
-					backgroundColor: "#fff",
+					backgroundColor: "#ffffff",
 					backgroundColorTran: true,
 					borderRadius: "4",
 					backgroundImage: "",
 				},
 				// 遮罩打开状态
 				showShadeStu: false,
+				// 块间距列表
+				blockInterArr: [],
+
+				blockInterValue: [
+					{
+						type: "top",
+						value: 0,
+						oldValue: 0,
+					},
+					{
+						type: "bottom",
+						value: 0,
+						oldValue: 0,
+					},
+					{
+						type: "left",
+						value: 0,
+						oldValue: 0,
+					},
+					{
+						type: "right",
+						value: 0,
+						oldValue: 0,
+					},
+				],
+
+				editInter: false,
+				interShadeStu: false,
+				currInterObj: null,
 			};
 		},
 		methods: {
@@ -987,6 +1088,20 @@
 					this.leftChange = centerW - newRect.width / 2;
 					this.yStand.left = "50%";
 					this.yStand.display = "block";
+				} else if (
+					Math.abs(newRect.left - centerW) < 10 &&
+					Math.abs(newRect.left - centerW) != 0
+				) {
+					this.leftChange = centerW;
+					this.yStand.left = "50%";
+					this.yStand.display = "block";
+				} else if (
+					Math.abs(newRect.left + newRect.width - centerW) < 10 &&
+					Math.abs(newRect.left + newRect.width - centerW) != 0
+				) {
+					this.leftChange = centerW - newRect.width;
+					this.yStand.left = "50%";
+					this.yStand.display = "block";
 				} else {
 					this.leftChange = "no";
 					this.yStand.display = "none";
@@ -997,6 +1112,20 @@
 				) {
 					this.xStand.top = "50%";
 					this.topChange = centerH - newRect.height / 2;
+					this.xStand.display = "block";
+				} else if (
+					Math.abs(newRect.top - centerH) < 10 &&
+					Math.abs(newRect.top - centerH) != 0
+				) {
+					this.xStand.top = "50%";
+					this.topChange = centerH;
+					this.xStand.display = "block";
+				} else if (
+					Math.abs(newRect.top + newRect.height - centerH) < 10 &&
+					Math.abs(newRect.top + newRect.height - centerH) != 0
+				) {
+					this.xStand.top = "50%";
+					this.topChange = centerH - newRect.height;
 					this.xStand.display = "block";
 				} else {
 					this.xStand.display = "none";
@@ -1085,11 +1214,11 @@
 						this.yStand.display = "none";
 					}
 				}
-				// top bootom
+				// top bottom
 				if (this.topChange == "no") {
 					let topObjEle = this.boxList[topInd];
 					let topObjCenEle = this.boxList[verInd];
-					let bootomObjCenEle = this.boxList[botmInd];
+					let bottomObjCenEle = this.boxList[botmInd];
 					let topCenDis = Math.abs(
 						newRect.top +
 							newRect.height / 2 -
@@ -1097,9 +1226,9 @@
 							topObjCenEle.height / 2
 					);
 					let topDis = Math.abs(topObjEle.top - newRect.top);
-					let bootomDis = Math.abs(
-						bootomObjCenEle.top +
-							bootomObjCenEle.height -
+					let bottomDis = Math.abs(
+						bottomObjCenEle.top +
+							bottomObjCenEle.height -
 							newRect.top -
 							newRect.height
 					);
@@ -1115,21 +1244,204 @@
 						this.topChange = topObjEle.top;
 						this.xStand.top = this.topChange + "px";
 						this.xStand.display = "block";
-					} else if (bootomDis < 10 && bootomDis != 0) {
+					} else if (bottomDis < 10 && bottomDis != 0) {
 						this.topChange =
-							bootomObjCenEle.top +
-							bootomObjCenEle.height -
+							bottomObjCenEle.top +
+							bottomObjCenEle.height -
 							newRect.height;
 						this.xStand.top =
-							bootomObjCenEle.top + bootomObjCenEle.height + "px";
+							bottomObjCenEle.top + bottomObjCenEle.height + "px";
 						this.xStand.display = "block";
 					} else {
 						this.topChange = "no";
 						this.xStand.display = "none";
 					}
 				}
-            },
-            // 快定位升级版
+			},
+			// 块间距定位
+			blockInterval(objItem) {
+				this.currInterObj = objItem;
+				let topV = objItem.top;
+				let leftV = objItem.left;
+				let bottomV = objItem.top + objItem.height;
+				let rightV = objItem.left + objItem.width;
+				let resTopArr = [];
+				let resbottomArr = [];
+				let resLeftArr = [];
+				let resRightArr = [];
+				for (let item of this.boxList) {
+					if (item.index != objItem.index) {
+						let bottomI = item.top + item.height;
+						let rightI = item.left + item.width;
+						let isbottom = item.top > bottomV;
+						let isTop = bottomI < topV;
+						if (
+							!(item.left > rightV || rightI < leftV) &&
+							(isbottom || isTop)
+						) {
+							let objA = {
+								obj: item,
+								left: 0,
+								top: isbottom ? bottomV : bottomI,
+								height: isbottom
+									? item.top - bottomV
+									: topV - bottomI,
+								width: 0,
+								type: isbottom ? "bottom" : "top",
+							};
+
+							if (item.left >= leftV && rightI <= rightV) {
+								objA.left = item.left + item.width / 2;
+							} else if (item.left < leftV && rightI <= rightV) {
+								objA.left = (rightI - leftV) / 2 + leftV;
+							} else if (rightI > rightV && item.left >= leftV) {
+								objA.left = (rightV - item.left) / 2 + item.left;
+							} else {
+								objA.left = leftV + objItem.width / 2;
+							}
+							if (isTop) {
+								resTopArr.push(objA);
+							} else {
+								resbottomArr.push(objA);
+							}
+							continue;
+						}
+						let isRight = item.left > rightV;
+						let isLeft = rightI < leftV;
+						if (
+							!(item.top > bottomV || bottomI < topV) &&
+							(isRight || isLeft)
+						) {
+							let objA = {
+								obj: item,
+								left: isRight ? rightV : rightI,
+								top: 0,
+								height: 0,
+								width: isRight
+									? item.left - rightV
+									: leftV - rightI,
+								isLeft,
+								type: isRight ? "right" : "left",
+							};
+							if (item.top >= topV && bottomI <= bottomV) {
+								objA.top = item.top + item.height / 2;
+							} else if (item.top < topV && bottomI <= bottomV) {
+								objA.top = (bottomI - topV) / 2 + topV;
+							} else if (item.top >= topV && bottomI > bottomV) {
+								objA.top = (bottomV - item.top) / 2 + item.top;
+							} else {
+								objA.top = topV + objItem.height / 2;
+							}
+							if (isLeft) {
+								resLeftArr.push(objA);
+							} else {
+								resRightArr.push(objA);
+							}
+							continue;
+						}
+					}
+				}
+				resLeftArr.sort((a, b) => a.width - b.width);
+				resRightArr.sort((a, b) => a.width - b.width);
+				resTopArr.sort((a, b) => a.height - b.height);
+				resbottomArr.sort((a, b) => a.height - b.height);
+
+				let topObj = resTopArr[0];
+				let bottomObj = resbottomArr[0];
+				let rightObj = resRightArr[0];
+				let leftObj = resLeftArr[0];
+				if (!topObj) {
+					topObj = {
+						width: 0,
+						top: 0,
+						left: objItem.width / 2 + leftV,
+						height: topV,
+						type: "top",
+					};
+				}
+				if (!bottomObj) {
+					bottomObj = {
+						width: 0,
+						top: topV + objItem.height,
+						left: objItem.width / 2 + leftV,
+						height: this.bodySize.height - topV - objItem.height,
+						type: "bottom",
+					};
+				}
+				if (!rightObj) {
+					rightObj = {
+						width: this.bodySize.width - leftV - objItem.width,
+						top: topV + objItem.height / 2,
+						left: leftV + objItem.width,
+						height: 0,
+						type: "right",
+					};
+				}
+				if (!leftObj) {
+					leftObj = {
+						width: leftV,
+						top: topV + objItem.height / 2,
+						left: 0,
+						height: 0,
+						type: "left",
+					};
+				}
+				this.blockInterArr = [];
+				this.blockInterValue[0].value = topObj.height;
+				this.blockInterValue[0].oldValue = topObj.height;
+
+				this.blockInterValue[1].value = bottomObj.height;
+				this.blockInterValue[1].oldValue = bottomObj.height;
+
+				this.blockInterValue[2].value = leftObj.width;
+				this.blockInterValue[2].oldValue = leftObj.width;
+
+				this.blockInterValue[3].value = rightObj.width;
+				this.blockInterValue[3].oldValue = rightObj.width;
+
+				this.blockInterArr.push(topObj);
+				this.blockInterArr.push(bottomObj);
+				this.blockInterArr.push(leftObj);
+				this.blockInterArr.push(rightObj);
+				this.editInterS();
+				// return { topObj, bottomObj, rightObj, leftObj };
+			},
+			blurValue(val, item) {
+				val = parseFloat(val);
+				if (!isNaN(val) && val >= 0) {
+					let obj = this.findInterObj(item.type);
+					let diff = item.oldValue - val;
+					item.oldValue = val;
+					obj.oldValue = obj.value;
+					obj.value = parseFloat(obj.value) + diff;
+				}
+			},
+			getValueToView() {
+				this.currInterObj.top =
+					parseFloat(this.blockInterValue[0].value) +
+					this.blockInterArr[0].top;
+				this.currInterObj.left =
+					parseFloat(this.blockInterValue[2].value) +
+					this.blockInterArr[2].left;
+			},
+			findInterObj(type) {
+				switch (type) {
+					case "top":
+						return this.blockInterValue.find(
+							(it) => it.type == "bottom"
+						);
+					case "bottom":
+						return this.blockInterValue.find((it) => it.type == "top");
+					case "left":
+						return this.blockInterValue.find(
+							(it) => it.type == "right"
+						);
+					case "right":
+						return this.blockInterValue.find((it) => it.type == "left");
+				}
+			},
+
+			interDatumLine(obj) {},
 			throttle(func, delay) {
 				let startTime = Date.now();
 				let self = this;
@@ -1149,7 +1461,7 @@
 					}
 				};
 			},
-			// 编辑尺寸
+			// 编辑样式
 			editSize(obj) {
 				this.backupData = JSON.parse(JSON.stringify(obj));
 				this.titleE = obj.title;
@@ -1191,19 +1503,22 @@
 				this.currEditItem.style = cpData;
 				this.resizeCharFun(this.currEditItem);
 				this.currStyle = {
+					headWeight: false,
+					headFSize: "16",
+					headFColor: "#ffffff",
 					backgroundImage: "",
 					borderWidth: "0",
 					borderColor: "#000",
 					borderStyle: "solid",
 					numColor: "#01fcff",
-					remarkColor: "#000",
+					// remarkColor: "#000",
 					numFSize: "32",
-					remarkFSize: "18",
+					// remarkFSize: "18",
 					marginB: "10",
 					numWeight: true,
-					remarkWeight: true,
+					// remarkWeight: true,
 					backgroundColorTran: true,
-					backgroundColor: true,
+					backgroundColor: "",
 					headFColor: "#000",
 				};
 				this.currEditItem = {};
@@ -1254,7 +1569,10 @@
 			},
 			confirmEditGlobal() {
 				this.boxList.forEach((item) => {
-					item.style.headFColor = this.globalData.color;
+					item.style.headFColor = this.globalData.headFColor;
+					item.style.headWeight = this.globalData.headWeight;
+					item.style.headFSize = this.globalData.headFSize;
+
 					item.style.backgroundImage = `url(${this.globalData.backgroundImage})`;
 					item.style.backgroundColor = this.globalData.backgroundColorTran
 						? "transparent"
@@ -1267,7 +1585,7 @@
 				this.editGlobal = false;
 			},
 			editGlobalS() {
-                this.editSizeStu = false;
+				this.editSizeStu = false;
 				this.showShadeStu = true;
 				setTimeout(() => {
 					this.editGlobal = true;
@@ -1276,6 +1594,36 @@
 			closeShadow() {
 				this.editGlobal = false;
 			},
+			// 间距调整
+			cachEditInter() {
+				this.editInter = false;
+				this.blockInterArr = [];
+			},
+			confirmEditInter() {
+				this.currInterObj.top =
+					parseFloat(this.blockInterValue[0].value) +
+					this.blockInterArr[0].top;
+				this.currInterObj.left =
+					parseFloat(this.blockInterValue[2].value) +
+					this.blockInterArr[2].left;
+				this.blockInterArr = [];
+				this.editInter = false;
+			},
+			editInterS() {
+				this.editInter = false;
+				this.interShadeStu = true;
+				setTimeout(() => {
+					this.editInter = true;
+					this.$refs.interO0[0].focus();
+				}, 0);
+			},
+			closeInterShadow() {
+				this.editInter = false;
+				this.blockInterArr = [];
+            },
+            newBlock(){
+                
+            }
 		},
 		mounted() {
 			this.reloadSize();
@@ -1376,6 +1724,13 @@
 					}, 400);
 				}
 			},
+			editInter(newV) {
+				if (!newV) {
+					setTimeout(() => {
+						this.interShadeStu = false;
+					}, 400);
+				}
+			},
 		},
 		destroyed() {
 			window.removeEventListener("resize", this.resizeTh);
@@ -1383,6 +1738,18 @@
 		filters: {
 			formatNum(value, setting) {
 				return numbro(value).format(setting);
+			},
+			changeCh(type) {
+				switch (type) {
+					case "left":
+						return "左";
+					case "right":
+						return "右";
+					case "top":
+						return "上";
+					case "bottom":
+						return "下";
+				}
 			},
 		},
 	};
@@ -1401,7 +1768,7 @@
 		position: relative;
 		z-index: 0;
 		height: 100%;
-		background-color: #fff;
+		background-color: #ffffff;
 		background-repeat: no-repeat;
 		background-size: 100% 100%;
 	}
@@ -1420,7 +1787,7 @@
 		border-radius: 4px;
 		// padding: 0 10px 10px 10px;
 		box-sizing: border-box;
-		// background-color: #fff;
+		// background-color: #ffffff;
 		&:hover .head-menu {
 			display: flex;
 		}
@@ -1442,7 +1809,7 @@
 	}
 	.stand {
 		position: absolute;
-		z-index: 99999;
+		z-index: 99;
 		&-x {
 			height: 0;
 			width: 100%;
@@ -1469,7 +1836,7 @@
 		top: 5px;
 	}
 	.head-menu {
-		background-color: #fff;
+		background-color: #ffffff;
 		display: none;
 		border-radius: 2em;
 		border-top: 1px solid transparent;
@@ -1497,7 +1864,7 @@
 			margin-left: 10px;
 			position: relative;
 			z-index: 1;
-			background-color: #fff;
+			background-color: #ffffff;
 			&:hover .menu-ul {
 				height: auto;
 				opacity: 1;
@@ -1512,7 +1879,7 @@
 		transform: translateX(-50%);
 		// top: 30px;
 		padding-top: 10px;
-		background-color: #fff;
+		background-color: #ffffff;
 		top: 24px;
 		padding: 10px 2px 2px 2px;
 		& ul {
@@ -1571,7 +1938,7 @@
 		transition-duration: 0.4s;
 		overflow: hidden;
 		transition-property: opacity, transform;
-		background-color: #fff;
+		background-color: #ffffff;
 		border-radius: 4px;
 		&--show {
 			transform: translate(-50%, -50%);
@@ -1676,7 +2043,7 @@
 	}
 	.set-item {
 		border-radius: 50%;
-		background-color: #fff;
+		background-color: #ffffff;
 		width: 40px;
 		height: 40px;
 		border-radius: 50%;
@@ -1701,7 +2068,7 @@
 	}
 	.title-two {
 		font-size: 14px;
-		margin-left: 10px;
+		// margin-left: 10px;
 		margin-top: 6px;
 	}
 	.maring-t14 {
@@ -1726,5 +2093,18 @@
 		left: 0;
 		background-color: transparent;
 		z-index: 100;
+	}
+	.two-item {
+		display: flex;
+		& > div {
+			width: 50%;
+			span {
+				margin-right: 10px;
+			}
+		}
+		& > div:first-child {
+			margin-bottom: 15px;
+		}
+		flex-wrap: wrap;
 	}
 </style>
