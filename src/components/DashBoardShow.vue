@@ -504,12 +504,12 @@
 	.head-menu {
 		background-color: #fff;
 		border-radius: 2em;
-		border: 1px solid #44444480;
+		border: 1px solid transparent;
 		transition: border-color 0.2s;
 		cursor: auto;
-		// &:hover {
-		// 	border-color: #44444480;
-		// }
+		&:hover {
+			border-color: #44444480;
+		}
 		padding: 2px 10px;
 		& i {
 			cursor: pointer;
