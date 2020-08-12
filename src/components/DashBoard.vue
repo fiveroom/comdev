@@ -1,6 +1,5 @@
 <template>
 	<div class="dash-board">
-		<!-- v-show="refreshDash" -->
 		<section
 			class="dash-body"
 			ref="dashBody"
@@ -184,129 +183,127 @@
 				<div class="set-item" title="新建" @click="dialogVisible = true">
 					<i class="el-icon-circle-plus-outline"></i>
 				</div>
+				<div class="set-item" title="对齐" @click="diaAlign = true">
+					<i class="iconfont icon-duiqi"></i>
+				</div>
+
 				<!-- <div class="set-item" title="间距">
 					<i class="el-icon-crop"></i>
 				</div>-->
-				<div class="set-item" title="全局设置" @click="editGlobalS">
+				<div class="set-item" title="全局设置" @click="editGlobal = true">
 					<i class="el-icon-monitor"></i>
 				</div>
 				<div class="set-item" title="画布设置" @click="editBodyS">
 					<i class="el-icon-s-tools"></i>
 				</div>
 			</div>
-			<div class="shade" v-show="showShadeStu" @click="closeShadow">
-				<Popup
-					:showPp="editGlobal"
-					title="全局设置"
-					@catchEv="cachEditGlobal"
-					@confirm="confirmEditGlobal"
-					@closeEv="cachEditGlobal"
-					@click.native.stop
-				>
-					<div class="form-size" @keyup.enter="confirmEditGlobal">
-						<div class="mini-title">标题</div>
-						<div class="border-inp inp-padding">
-							<div>
-								<span>大小</span>
-								<el-input size="mini" type="number" v-model="globalData.headFSize"></el-input>
-							</div>
-							<div>
-								<span>颜色</span>
-								<el-input size="mini" type="color" v-model="globalData.headFColor"></el-input>
-							</div>
-							<div>
-								<span>加粗</span>
-								<el-checkbox size="mini" v-model="globalData.headWeight"></el-checkbox>
-							</div>
+			<Popup2
+				:showPp="editGlobal"
+				title="全局设置"
+				@catchev="editGlobal = false"
+				@confirm="confirmEditGlobal"
+				@closeev="editGlobal = false"
+			>
+				<div class="form-size" @keyup.enter="confirmEditGlobal">
+					<div class="mini-title">标题</div>
+					<div class="border-inp inp-padding">
+						<div>
+							<span>大小</span>
+							<el-input size="mini" type="number" v-model="globalData.headFSize"></el-input>
 						</div>
-						<div class="mini-title">块边框</div>
-						<div class="border-inp inp-padding">
-							<div>
-								<span>宽度</span>
-								<el-input size="mini" type="number" v-model="globalData.borderWidth"></el-input>
-							</div>
-							<div>
-								<span>颜色</span>
-								<el-input size="mini" type="color" v-model="globalData.borderColor"></el-input>
-							</div>
-							<div class="border-edit">
-								<span>样式</span>
-								<el-select v-model="globalData.borderStyle" placeholder="请选择" size="mini">
-									<el-option
-										v-for="item in borderStyle"
-										:key="item.value"
-										:label="item.label"
-										:value="item.value"
-									></el-option>
-								</el-select>
-							</div>
+						<div>
+							<span>颜色</span>
+							<el-input size="mini" type="color" v-model="globalData.headFColor"></el-input>
 						</div>
-						<div class="mini-title">边框圆角</div>
-						<div class="inp-padding">
-							<el-input size="mini" type="number" v-model="globalData.borderRadius"></el-input>
-						</div>
-						<div class="mini-title">背景图片</div>
-						<div class="inp-padding">
-							<el-upload
-								class="upimg-box"
-								:show-file-list="false"
-								:before-upload="(val) => beforUpImage(val, 'globalData')"
-								:http-request="()=>{}"
-								accept="image/*"
-								action="#"
-							>
-								<img v-if="globalData.backgroundImage" :src="globalData.backgroundImage" class="avatar" />
-								<i v-else class="el-icon-plus avatar-uploader-icon"></i>
-							</el-upload>
-							<div class="upimg-menu">
-								<el-button plain size="small" type="danger" @click="globalData.backgroundImage = ''">移除</el-button>
-							</div>
-						</div>
-						<div class="mini-title">背景颜色</div>
-						<div class="border-inp inp-padding">
-							<div>
-								<span>透明</span>
-								<el-checkbox size="mini" v-model="globalData.backgroundColorTran"></el-checkbox>
-							</div>
-							<div>
-								<span>颜色</span>
-								<el-input size="mini" type="color" v-model="globalData.backgroundColor"></el-input>
-							</div>
+						<div>
+							<span>加粗</span>
+							<el-checkbox size="mini" v-model="globalData.headWeight"></el-checkbox>
 						</div>
 					</div>
-				</Popup>
-			</div>
-			<div class="shade" v-show="interShadeStu" @click="closeInterShadow">
-				<Popup
-					:showPp="editInter"
-					title="间距调整"
-					@catchEv="cachEditInter"
-					@confirm="confirmEditInter"
-					@closeEv="cachEditInter"
-					@click.native.stop
-				>
-					<div class="form-size" @keyup.enter="confirmEditInter">
-						<div class="two-item">
-							<div v-for="(item, index) in blockInterValue" :key="index">
-								<span>{{item.type | changeCh}}</span>
-								<el-input
-									size="mini"
-									type="number"
-									@input="val => blurValue(val, item)"
-									v-model="item.value"
-									:ref="`interO${index}`"
-								></el-input>
-							</div>
+					<div class="mini-title">块边框</div>
+					<div class="border-inp inp-padding">
+						<div>
+							<span>宽度</span>
+							<el-input size="mini" type="number" v-model="globalData.borderWidth"></el-input>
+						</div>
+						<div>
+							<span>颜色</span>
+							<el-input size="mini" type="color" v-model="globalData.borderColor"></el-input>
+						</div>
+						<div class="border-edit">
+							<span>样式</span>
+							<el-select v-model="globalData.borderStyle" placeholder="请选择" size="mini">
+								<el-option
+									v-for="item in borderStyle"
+									:key="item.value"
+									:label="item.label"
+									:value="item.value"
+								></el-option>
+							</el-select>
 						</div>
 					</div>
-				</Popup>
-			</div>
-			<Popup
+					<div class="mini-title">边框圆角</div>
+					<div class="inp-padding">
+						<el-input size="mini" type="number" v-model="globalData.borderRadius"></el-input>
+					</div>
+					<div class="mini-title">背景图片</div>
+					<div class="inp-padding">
+						<el-upload
+							class="upimg-box"
+							:show-file-list="false"
+							:before-upload="(val) => beforUpImage(val, 'globalData')"
+							:http-request="()=>{}"
+							accept="image/*"
+							action="#"
+						>
+							<img v-if="globalData.backgroundImage" :src="globalData.backgroundImage" class="avatar" />
+							<i v-else class="el-icon-plus avatar-uploader-icon"></i>
+						</el-upload>
+						<div class="upimg-menu">
+							<el-button plain size="small" type="danger" @click="globalData.backgroundImage = ''">移除</el-button>
+						</div>
+					</div>
+					<div class="mini-title">背景颜色</div>
+					<div class="border-inp inp-padding">
+						<div>
+							<span>透明</span>
+							<el-checkbox size="mini" v-model="globalData.backgroundColorTran"></el-checkbox>
+						</div>
+						<div>
+							<span>颜色</span>
+							<el-input size="mini" type="color" v-model="globalData.backgroundColor"></el-input>
+						</div>
+					</div>
+				</div>
+			</Popup2>
+			<Popup2
+				:showPp="editInter"
+				title="间距调整"
+				@catchev="cachEditInter"
+				@confirm="confirmEditInter"
+				@closeev="cachEditInter"
+			>
+				<div class="form-size" @keyup.enter="confirmEditInter">
+					<div class="two-item">
+						<div v-for="(item, index) in blockInterValue" :key="index">
+							<span>{{item.type | changeCh}}</span>
+							<el-input
+								size="mini"
+								type="number"
+								@input="val => blurValue(val, item)"
+								v-model="item.value"
+								:ref="`interO${index}`"
+							></el-input>
+						</div>
+					</div>
+				</div>
+			</Popup2>
+			<Popup2
 				:showPp="editSizeStu"
 				title="编辑"
-				@catchEv="cachEdit"
+				@catchev="cachEdit"
 				@confirm="confirmEdit"
-				@closeEv="cachEdit"
+				@closeev="cachEdit"
 			>
 				<div class="form-size" @keyup.enter="confirmEdit">
 					<div class="mini-title">标题</div>
@@ -421,15 +418,15 @@
 						</div>
 					</div>
 				</div>
-			</Popup>
-			<Popup
+			</Popup2>
+			<Popup2
 				:showPp="editSizeStuCanv"
 				title="画布设置"
-				@catchEv="cachEditCanv"
-				@confirm="confirmEditCanv"
-				@closeEv="cachEditCanv"
+				@catchev="cachEditCanv"
+				@confirm="editSizeStuCanv = false"
+				@closeev="cachEditCanv"
 			>
-				<div class="form-size" @keyup.enter="confirmEditCanv">
+				<div class="form-size" @keyup.enter="editSizeStuCanv = false">
 					<!-- <div class="form-items"> -->
 					<div class="mini-title">背景图片</div>
 					<div class="inp-padding">
@@ -453,9 +450,8 @@
 						<el-input size="mini" type="color" v-model="bodyStyle.backgroundColor"></el-input>
 					</div>
 				</div>
-			</Popup>
+			</Popup2>
 		</section>
-
 		<div
 			:class="['big-wiew', showBigStu?'big-wiew--show':'']"
 			:style="{height:hiddenHei?'0':'calc(100% - 150px)' }"
@@ -507,6 +503,29 @@
 			<div slot="footer" class="dialog-footer">
 				<el-button @click="digLink = false; addLinkValue = ''" size="small">取 消</el-button>
 				<el-button type="primary" @click="comfirmAddL" size="small">确 定</el-button>
+			</div>
+		</el-dialog>
+		<el-dialog title="对齐" :visible.sync="diaAlign" width="30%" @close="catchAligin">
+			<el-table
+				ref="aliginTable"
+				:data="boxList"
+				tooltip-effect="dark"
+				style="width: 100%"
+				border
+				height="400"
+				@select="val=>alignCkBox = val"
+			>
+				<!-- @selection-change="handleSelectionChange" -->
+				<el-table-column type="selection" width="55"></el-table-column>
+				<el-table-column label="标题" prop="title"></el-table-column>
+			</el-table>
+			<el-checkbox-group v-model="aliginMenuArr" class="aligin-menu">
+				<el-checkbox label="横向分步"></el-checkbox>
+				<el-checkbox label="纵向分布"></el-checkbox>
+			</el-checkbox-group>
+			<div slot="footer" class="dialog-footer">
+				<el-button @click="catchAligin" size="small">取 消</el-button>
+				<el-button type="primary" @click="comfirmAlign" size="small">确 定</el-button>
 			</div>
 		</el-dialog>
 	</div>
@@ -563,8 +582,8 @@
 						},
 					],
 				},
-                activeIndex: 1,
-                
+				activeIndex: 1,
+
 				// 画布大小
 				bodyStyle: {
 					width: 1880,
@@ -828,8 +847,8 @@
 							backgroundColor: "",
 						},
 					},
-                ],
-                
+				],
+
 				// x、y轴定位虚线
 				xStand: {
 					top: 0,
@@ -919,14 +938,8 @@
 				],
 				// 画布设置
 				editSizeStuCanv: false,
-				// bodyStyle: {
-				// 	backgroundImage: "",
-				// 	backgroundColor: "#ffffff",
-				// },
-				bodyStyleCp: {
-					backgroundImage: "",
-					backgroundColor: "#ffffff",
-				},
+				// body样式备份  处理页面大小情况
+				bodyStyleCp: null,
 
 				// 全局设置
 				editGlobal: false,
@@ -943,7 +956,6 @@
 					backgroundImage: "",
 				},
 				// 遮罩打开状态
-				showShadeStu: false,
 				// 块间距列表
 				blockInterArr: [],
 
@@ -971,7 +983,6 @@
 				],
 
 				editInter: false,
-				interShadeStu: false,
 				currInterObj: null,
 
 				// 快间距对比
@@ -979,12 +990,18 @@
 
 				dialogVisible: false, // 添加盒子
 				dialogData: false, // 添加数据
-				currAddItem: null,
+				currAddItem: null, // 添加数据当前盒子对象
 				digLink: false, // 添加链接
 				addLinkValue: "", // 链接
+				diaAlign: false, // 对齐
+				alignCkBox: [],
+				aliginMenuArr: [],
 			};
 		},
 		methods: {
+			test(a, b) {
+				console.log(a, b);
+			},
 			beforUpImage(file, type) {
 				this.statusEdit = true;
 				let filteDa = file;
@@ -1495,24 +1512,25 @@
 				// 横向
 			},
 			findXEqual(newRect, resArr) {
-				let xArr = [];
-				let yArr = [];
+				let xArr = [newRect];
+				let yArr = [newRect];
 				this.boxList.forEach((item) => {
-					if (item.index != newRect.index) {
-						if (
-							item.left >= newRect.left + newRect.width ||
-							item.left + item.width <= newRect.left
-						) {
-							xArr.push(item);
-						}
-						if (
-							item.top >= newRect.top + newRect.height ||
-							item.top + item.height <= newRect.top
-						) {
-							yArr.push(item);
-						}
+					// if (item.index != newRect.index) {
+					if (
+						item.left >= newRect.left + newRect.width ||
+						item.left + item.width <= newRect.left
+					) {
+						xArr.push(item);
 					}
+					// if (
+					// 	item.top >= newRect.top + newRect.height ||
+					// 	item.top + item.height <= newRect.top
+					// ) {
+					// yArr.push(item);
+					// }
+					// }
 				});
+				let ind = xArr.findIndex((it) => it.index == newRect.index);
 			},
 			interDatumLine(obj) {},
 			throttle(func, delay) {
@@ -1626,20 +1644,12 @@
 			cachEditCanv() {
 				this.editSizeStuCanv = false;
 				this.bodyStyle = JSON.parse(this.bodyStyleCp);
-				this.bodyStyleCp = "";
-			},
-			confirmEditCanv() {
-				this.editSizeStuCanv = false;
-				this.bodyStyleCp = "";
 			},
 			editBodyS() {
 				this.editSizeStuCanv = true;
 				this.bodyStyleCp = JSON.stringify(this.bodyStyle);
 			},
 			// 全局设置
-			cachEditGlobal() {
-				this.editGlobal = false;
-			},
 			confirmEditGlobal() {
 				this.boxList.forEach((item) => {
 					item.style.headFColor = this.globalData.headFColor;
@@ -1655,16 +1665,6 @@
 					item.style.borderStyle = this.globalData.borderStyle;
 					item.style.borderRadius = this.globalData.borderRadius + "px";
 				});
-				this.editGlobal = false;
-			},
-			editGlobalS() {
-				this.editSizeStu = false;
-				this.showShadeStu = true;
-				setTimeout(() => {
-					this.editGlobal = true;
-				}, 0);
-			},
-			closeShadow() {
 				this.editGlobal = false;
 			},
 			// 间距调整
@@ -1683,16 +1683,8 @@
 				this.editInter = false;
 			},
 			editInterS() {
-				this.editInter = false;
-				this.interShadeStu = true;
-				setTimeout(() => {
-					this.editInter = true;
-					this.$refs.interO0[0].focus();
-				}, 0);
-			},
-			closeInterShadow() {
-				this.editInter = false;
-				this.blockInterArr = [];
+				this.editInter = true;
+				this.$refs.interO0[0].focus();
 			},
 			newBlock() {
 				this.dialogVisible = true;
@@ -1769,6 +1761,32 @@
 				this.addLinkValue = "";
 				this.digLink = false;
 			},
+			// 对齐
+			comfirmAlign() {
+				let num = this.alignCkBox.length - 1;
+				this.aliginMenuArr.forEach((item) => {
+					if (item == "横向分布") {
+						this.alignCkBox.sort((a, b) => a.left - b.left);
+						let interval =
+							this.alignCkBox[num].left +
+							this.alignCkBox[num].width -
+							this.alignCkBox.reduce((a, b) => a.width + b.width);
+						
+					}
+					if (item == "纵向分布") {
+					}
+				});
+				this.diaAlign = false;
+				this.alignCkBox = [];
+				this.aliginMenuArr = [];
+				this.$refs.aliginTable.clearSelection();
+			},
+			catchAligin() {
+				this.diaAlign = false;
+				this.alignCkBox = [];
+				this.aliginMenuArr = [];
+				this.$refs.aliginTable.clearSelection();
+			},
 		},
 		mounted() {
 			this.reloadSize();
@@ -1778,6 +1796,7 @@
 		},
 		components: {
 			Popup: () => import("./Popup.vue"),
+			Popup2: () => import("./Popup2.vue"),
 		},
 		watch: {
 			heightE: {
@@ -1862,20 +1881,6 @@
 					}, 500);
 				}
 			},
-			editGlobal(newV) {
-				if (!newV) {
-					setTimeout(() => {
-						this.showShadeStu = false;
-					}, 400);
-				}
-			},
-			editInter(newV) {
-				if (!newV) {
-					setTimeout(() => {
-						this.interShadeStu = false;
-					}, 400);
-				}
-			},
 		},
 		destroyed() {
 			window.removeEventListener("resize", this.resizeTh);
@@ -1901,436 +1906,431 @@
 </script>
 
 <style lang="scss" scoped>
-	.dash-board {
-		width: 100%;
-		height: 100%;
-		background-color: #ececec;
-		padding: 20px;
-		box-sizing: border-box;
-		position: relative;
-	}
-	.dash-body {
-		position: relative;
-		z-index: 0;
-		height: 100%;
-		background-color: #ffffff;
-		background-repeat: no-repeat;
-		background-size: 100% 100%;
-	}
-	.drag-box {
-		width: 100%;
-		height: calc(100% - 30px);
-		padding: 0 10px 10px;
-		box-sizing: border-box;
-	}
-	.drag-head {
-		position: relative;
-		height: 100%;
-	}
-	.vue-drag {
-		box-shadow: 0px 0px 5px -2px rgba(0, 0, 0, 0.4);
-		border-radius: 4px;
-		// padding: 0 10px 10px 10px;
-		box-sizing: border-box;
-		// background-color: #ffffff;
-		&:hover .head-menu {
-			display: flex;
-		}
-		background-size: 100% 100%;
-		box-sizing: border-box;
-		background-repeat: no-repeat;
-	}
-	.header-title {
-		height: 100%;
-		text-align: center;
-		width: 100%;
-		&::after {
-			vertical-align: middle;
-			content: "";
-			height: 100%;
-			width: 0;
-			display: inline-block;
-		}
-	}
-	.stand {
-		position: absolute;
-		z-index: 99;
-		&-x {
-			height: 0;
-			width: 100%;
-			border-top: 1px dashed #6eb1eb;
-		}
-		&-y {
-			height: 100%;
-			width: 0;
-			border-right: 1px dashed #6eb1eb;
-		}
-	}
-	.chart-head {
-		height: 40px;
+.dash-board {
+	width: 100%;
+	height: 100%;
+	background-color: #ececec;
+	padding: 20px;
+	box-sizing: border-box;
+	position: relative;
+}
+.dash-body {
+	position: relative;
+	z-index: 0;
+	height: 100%;
+	background-color: #ffffff;
+	background-repeat: no-repeat;
+	background-size: 100% 100%;
+}
+.drag-box {
+	width: 100%;
+	height: calc(100% - 30px);
+	padding: 0 10px 10px;
+	box-sizing: border-box;
+}
+.drag-head {
+	position: relative;
+	height: 100%;
+}
+.vue-drag {
+	box-shadow: 0px 0px 5px -2px rgba(0, 0, 0, 0.4);
+	border-radius: 4px;
+	// padding: 0 10px 10px 10px;
+	box-sizing: border-box;
+	// background-color: #ffffff;
+	&:hover .head-menu {
 		display: flex;
-		padding: 0 10px;
-		align-items: center;
-		cursor: move;
-		justify-content: space-between;
-		position: relative;
 	}
-	.head-abso {
-		position: absolute;
-		right: 10px;
-		top: 5px;
+	background-size: 100% 100%;
+	box-sizing: border-box;
+	background-repeat: no-repeat;
+}
+.header-title {
+	height: 100%;
+	text-align: center;
+	width: 100%;
+	&::after {
+		vertical-align: middle;
+		content: "";
+		height: 100%;
+		width: 0;
+		display: inline-block;
 	}
-	.head-menu {
-		background-color: #ffffff;
-		display: none;
-		border-radius: 2em;
-		border-top: 1px solid transparent;
-		transition: border-color 0.2s;
-		cursor: auto;
-		&:hover {
-			border-top-color: #44444480;
-		}
-		padding: 2px 10px;
-		& i {
-			cursor: pointer;
-			display: inline-block;
-			border-radius: 50%;
-			padding: 4px;
-			background-color: transparent;
-			transition: all 0.4s;
-			&:hover {
-				background-color: rgba(0, 0, 0, 0.2);
-			}
-		}
-		& i ~ i {
-			margin-left: 10px;
-		}
-		&-more {
-			margin-left: 10px;
-			position: relative;
-			z-index: 1;
-			background-color: #ffffff;
-			&:hover .menu-ul {
-				height: auto;
-				opacity: 1;
-			}
-		}
-	}
-	.menu-ul {
-		position: absolute;
-		left: 50%;
+}
+.stand {
+	position: absolute;
+	z-index: 99;
+	&-x {
 		height: 0;
-		overflow: hidden;
-		transform: translateX(-50%);
-		// top: 30px;
-		padding-top: 10px;
+		width: 100%;
+		border-top: 1px dashed #6eb1eb;
+	}
+	&-y {
+		height: 100%;
+		width: 0;
+		border-right: 1px dashed #6eb1eb;
+	}
+}
+.chart-head {
+	height: 40px;
+	display: flex;
+	padding: 0 10px;
+	align-items: center;
+	cursor: move;
+	justify-content: space-between;
+	position: relative;
+}
+.head-abso {
+	position: absolute;
+	right: 10px;
+	top: 5px;
+}
+.head-menu {
+	background-color: #ffffff;
+	display: none;
+	border-radius: 2em;
+	border-top: 1px solid transparent;
+	transition: border-color 0.2s;
+	cursor: auto;
+	&:hover {
+		border-top-color: #44444480;
+	}
+	padding: 2px 10px;
+	& i {
+		cursor: pointer;
+		display: inline-block;
+		border-radius: 50%;
+		padding: 4px;
+		background-color: transparent;
+		transition: all 0.4s;
+		&:hover {
+			background-color: rgba(0, 0, 0, 0.2);
+		}
+	}
+	& i ~ i {
+		margin-left: 10px;
+	}
+	&-more {
+		margin-left: 10px;
+		position: relative;
+		z-index: 1;
 		background-color: #ffffff;
-		top: 24px;
-		padding: 10px 2px 2px 2px;
-		& ul {
-			list-style: none;
-			box-shadow: 0px 0px 5px -2px rgba(0, 0, 0, 0.4);
-		}
-		& li {
-			padding: 2px 5px;
-		}
-		// & li:nth-child(2n + 1) {
-		// 	border-bottom: 1px solid #c8c8c8;
-		// }
-		opacity: 0;
-		transition: opacity 0.2s;
-	}
-	.menu-li-border {
-		border-bottom: 1px solid #c8c8c8;
-	}
-	.form-size > div + div {
-		margin-top: 14px;
-	}
-	.form-items {
-		display: flex;
-		& > div {
-			width: 50%;
-		}
-	}
-	.form-inp {
-		display: flex;
-		align-items: center;
-		font-size: 14px;
-		span {
-			text-align: right;
-			margin-right: 10px;
-			width: 70px;
-			flex-shrink: 0;
-		}
-	}
-	.form-size .el-input {
-		width: 80px;
-		flex-grow: 1;
-	}
-	.form-size .inp-title .el-input {
-		width: auto;
-	}
-	.big-wiew {
-		position: absolute;
-		z-index: 99999;
-		width: calc(100% - 150px);
-		top: 50%;
-		left: 50%;
-		transform: translate(-50%, -50%);
-		box-shadow: 0px 0px 5px -2px rgba(0, 0, 0, 0.4);
-		transform: translate(-50%, calc(-50% - 40px));
-		opacity: 0;
-		transition-duration: 0.4s;
-		overflow: hidden;
-		transition-property: opacity, transform;
-		background-color: #ffffff;
-		border-radius: 4px;
-		&--show {
-			transform: translate(-50%, -50%);
+		&:hover .menu-ul {
+			height: auto;
 			opacity: 1;
 		}
-		& > div {
-			height: 100%;
-			padding: 10px;
-			box-sizing: border-box;
-			i {
-				font-size: 24px;
-				position: absolute;
-				right: 10px;
-				top: 10px;
-				cursor: pointer;
-				z-index: 1;
-			}
-		}
 	}
-	.mini-title {
-		font-size: 14px;
+}
+.menu-ul {
+	position: absolute;
+	left: 50%;
+	height: 0;
+	overflow: hidden;
+	transform: translateX(-50%);
+	// top: 30px;
+	padding-top: 10px;
+	background-color: #ffffff;
+	top: 24px;
+	padding: 10px 2px 2px 2px;
+	& ul {
+		list-style: none;
+		box-shadow: 0px 0px 5px -2px rgba(0, 0, 0, 0.4);
 	}
-	@media screen {
+	& li {
+		padding: 2px 5px;
 	}
-	.upimg-box {
-		display: inline-block;
-		margin: 0 auto;
-		overflow: hidden;
-		img {
-			height: 100%;
-			width: 100%;
-		}
-		vertical-align: bottom;
+	// & li:nth-child(2n + 1) {
+	// 	border-bottom: 1px solid #c8c8c8;
+	// }
+	opacity: 0;
+	transition: opacity 0.2s;
+}
+.menu-li-border {
+	border-bottom: 1px solid #c8c8c8;
+}
+.form-size > div + div {
+	margin-top: 14px;
+}
+.form-items {
+	display: flex;
+	& > div {
+		width: 50%;
+	}
+}
+.form-inp {
+	display: flex;
+	align-items: center;
+	font-size: 14px;
+	span {
+		text-align: right;
 		margin-right: 10px;
-		& .el-upload {
-			border-radius: 6px;
-			border: 1px dashed #efefef;
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			height: 100%;
-			width: 100px;
+		width: 70px;
+		flex-shrink: 0;
+	}
+}
+.form-size .el-input {
+	width: 80px;
+	flex-grow: 1;
+}
+.form-size .inp-title .el-input {
+	width: auto;
+}
+.big-wiew {
+	position: absolute;
+	z-index: 99999;
+	width: calc(100% - 150px);
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	box-shadow: 0px 0px 5px -2px rgba(0, 0, 0, 0.4);
+	transform: translate(-50%, calc(-50% - 40px));
+	opacity: 0;
+	transition-duration: 0.4s;
+	overflow: hidden;
+	transition-property: opacity, transform;
+	background-color: #ffffff;
+	border-radius: 4px;
+	&--show {
+		transform: translate(-50%, -50%);
+		opacity: 1;
+	}
+	& > div {
+		height: 100%;
+		padding: 10px;
+		box-sizing: border-box;
+		i {
+			font-size: 24px;
+			position: absolute;
+			right: 10px;
+			top: 10px;
+			cursor: pointer;
+			z-index: 1;
 		}
 	}
-	::v-deep .upimg-box .el-upload {
+}
+.mini-title {
+	font-size: 14px;
+}
+@media screen {
+}
+.upimg-box {
+	display: inline-block;
+	margin: 0 auto;
+	overflow: hidden;
+	img {
+		height: 100%;
+		width: 100%;
+	}
+	vertical-align: bottom;
+	margin-right: 10px;
+	& .el-upload {
 		border-radius: 6px;
 		border: 1px dashed #efefef;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		height: 100px;
+		height: 100%;
 		width: 100px;
-		&:hover {
-			border-color: #409eff;
-		}
 	}
-	.upimg-menu {
-		display: inline-block;
-		// height: 100px;
+}
+::v-deep .upimg-box .el-upload {
+	border-radius: 6px;
+	border: 1px dashed #efefef;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	height: 100px;
+	width: 100px;
+	&:hover {
+		border-color: #409eff;
 	}
-	.border-inp {
+}
+.upimg-menu {
+	display: inline-block;
+	// height: 100px;
+}
+.border-inp {
+	display: flex;
+	align-items: center;
+	// justify-content: center;
+	font-size: 14px;
+	& > div {
 		display: flex;
 		align-items: center;
 		// justify-content: center;
-		font-size: 14px;
-		& > div {
-			display: flex;
-			align-items: center;
-			// justify-content: center;
-			// width: 30%;
-			width: 30%;
-		}
-		& > div + div {
-			margin-left: 10px;
-		}
-		& > .border-edit .el-select {
-			// margin-left: 5px;
-			width: 86px;
-		}
+		// width: 30%;
+		width: 30%;
+	}
+	& > div + div {
+		margin-left: 10px;
+	}
+	& > .border-edit .el-select {
+		// margin-left: 5px;
+		width: 86px;
+	}
+	span {
+		flex-shrink: 0;
+		margin-right: 4px;
+	}
+	.el-input {
+		width: 50px;
+		flex-grow: 0;
+		// margin-left: 5px;
+	}
+}
+.drag-num {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+}
+.cvs-set {
+	position: absolute;
+	bottom: 20px;
+	cursor: pointer;
+	right: 20px;
+	z-index: 10;
+}
+.set-item {
+	border-radius: 50%;
+	background-color: #ffffff;
+	width: 40px;
+	height: 40px;
+	border-radius: 50%;
+	color: #409eff;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	// opacity: .5;
+	font-size: 20px;
+	box-shadow: 0 0 6px rgba(0, 0, 0, 0.12);
+	transition-property: opacity, background-color;
+	transition-duration: 0.2s;
+	&:hover {
+		background-color: #f2f6fc;
+	}
+	& ~ div {
+		margin-top: 10px;
+	}
+}
+.inp-padding {
+	padding: 0 10px;
+}
+.title-two {
+	font-size: 14px;
+	// margin-left: 10px;
+	margin-top: 6px;
+}
+.maring-t14 {
+	margin-top: 14px;
+}
+.inp-title {
+	display: flex;
+	align-items: center;
+	& > div.el-input {
+		flex-grow: 0;
+	}
+	&--color {
+		width: 50px !important;
+		margin-left: 10px;
+	}
+}
+
+.two-item {
+	display: flex;
+	& > div {
+		width: 50%;
 		span {
-			flex-shrink: 0;
-			margin-right: 4px;
-		}
-		.el-input {
-			width: 50px;
-			flex-grow: 0;
-			// margin-left: 5px;
+			margin-right: 10px;
 		}
 	}
-	.drag-num {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
+	& > div:first-child {
+		margin-bottom: 15px;
 	}
-	.cvs-set {
-		position: absolute;
-		bottom: 20px;
-		cursor: pointer;
-		right: 20px;
-		z-index: 10;
-	}
-	.set-item {
-		border-radius: 50%;
-		background-color: #ffffff;
-		width: 40px;
-		height: 40px;
-		border-radius: 50%;
-		color: #409eff;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		// opacity: .5;
-		font-size: 20px;
-		box-shadow: 0 0 6px rgba(0, 0, 0, 0.12);
-		transition-property: opacity, background-color;
-		transition-duration: 0.2s;
-		&:hover {
-			background-color: #f2f6fc;
-		}
-		& ~ div {
-			margin-top: 10px;
-		}
-	}
-	.inp-padding {
-		padding: 0 10px;
-	}
-	.title-two {
+	flex-wrap: wrap;
+}
+// 添加盒子
+// ::v-deep .el-drawer.rtl:focus {
+// 	outline: none;
+// }
+// .dra-big-title {
+// 	line-height: 60px;
+// 	height: 60px;
+// 	margin: 0;
+// 	font-size: 18px;
+// 	color: #262626;
+// 	vertical-align: middle;
+// 	color: #373d41;
+// 	border-bottom: 1px solid #efefef;
+// }
+// .drawer__body,
+// .drawer__footer,
+// .dra-big-title {
+// 	padding: 0 24px;
+// }
+// .dra-box {
+// 	& > header {
+// 		font-size: 14px;
+// 		padding: 10px 0;
+// 	}
+// }
+// .drawer__footer {
+// 	border-top: 1px solid #efefef;
+// 	height: 60px;
+// 	line-height: 60px;
+// }
+// .drawer__body {
+// 	height: calc(100% - 120px);
+// }
+// .drag-inp-item {
+// 	span {
+// 		font-size: 14px;
+// 		margin-bottom: 15px;
+// 		display: inline-block;
+// 	}
+// }
+// .drag-inp-item ~ div {
+// 	margin-top: 15px;
+// }
+.box-option {
+	color: #fff;
+	border-radius: 4px;
+	display: flex;
+	justify-content: space-between;
+	padding: 0 10px;
+	height: 60px;
+	align-items: center;
+	cursor: pointer;
+	& span {
 		font-size: 14px;
-		// margin-left: 10px;
-		margin-top: 6px;
 	}
-	.maring-t14 {
-		margin-top: 14px;
+	& + div {
+		margin-top: 15px;
 	}
-	.inp-title {
-		display: flex;
-		align-items: center;
-		& > div.el-input {
-			flex-grow: 0;
-		}
-		&--color {
-			width: 50px !important;
-			margin-left: 10px;
+	& > div > i + i {
+		margin-left: 10px;
+	}
+	transition: box-shadow 0.2s;
+	&--one {
+		background-color: skyblue;
+		&:hover {
+			box-shadow: 0px 0px 6px 0px rgba(135, 206, 235, 0.8);
 		}
 	}
-	.shade {
-		position: absolute;
-		height: 100%;
-		width: 100%;
-		top: 0;
-		left: 0;
-		background-color: transparent;
-		z-index: 100;
-	}
-	.two-item {
-		display: flex;
-		& > div {
-			width: 50%;
-			span {
-				margin-right: 10px;
-			}
-		}
-		& > div:first-child {
-			margin-bottom: 15px;
-		}
-		flex-wrap: wrap;
-	}
-	// 添加盒子
-	// ::v-deep .el-drawer.rtl:focus {
-	// 	outline: none;
-	// }
-	// .dra-big-title {
-	// 	line-height: 60px;
-	// 	height: 60px;
-	// 	margin: 0;
-	// 	font-size: 18px;
-	// 	color: #262626;
-	// 	vertical-align: middle;
-	// 	color: #373d41;
-	// 	border-bottom: 1px solid #efefef;
-	// }
-	// .drawer__body,
-	// .drawer__footer,
-	// .dra-big-title {
-	// 	padding: 0 24px;
-	// }
-	// .dra-box {
-	// 	& > header {
-	// 		font-size: 14px;
-	// 		padding: 10px 0;
-	// 	}
-	// }
-	// .drawer__footer {
-	// 	border-top: 1px solid #efefef;
-	// 	height: 60px;
-	// 	line-height: 60px;
-	// }
-	// .drawer__body {
-	// 	height: calc(100% - 120px);
-	// }
-	// .drag-inp-item {
-	// 	span {
-	// 		font-size: 14px;
-	// 		margin-bottom: 15px;
-	// 		display: inline-block;
-	// 	}
-	// }
-	// .drag-inp-item ~ div {
-	// 	margin-top: 15px;
-	// }
-	.box-option {
-		color: #fff;
-		border-radius: 4px;
-		display: flex;
-		justify-content: space-between;
-		padding: 0 10px;
-		height: 60px;
-		align-items: center;
-		cursor: pointer;
-		& span {
-			font-size: 14px;
-		}
-		& + div {
-			margin-top: 15px;
-		}
-		& > div > i + i {
-			margin-left: 10px;
-		}
-		transition: box-shadow 0.2s;
-		&--one {
-			background-color: skyblue;
-			&:hover {
-				box-shadow: 0px 0px 6px 0px rgba(135, 206, 235, 0.8);
-			}
-		}
-		&--two {
-			background-color: skyblue;
-			&:hover {
-				box-shadow: 0px 0px 6px 0px rgba(135, 206, 235, 0.8);
-			}
-		}
-		&--three {
-			background-color: skyblue;
-			&:hover {
-				box-shadow: 0px 0px 6px 0px rgba(135, 206, 235, 0.8);
-			}
+	&--two {
+		background-color: skyblue;
+		&:hover {
+			box-shadow: 0px 0px 6px 0px rgba(135, 206, 235, 0.8);
 		}
 	}
+	&--three {
+		background-color: skyblue;
+		&:hover {
+			box-shadow: 0px 0px 6px 0px rgba(135, 206, 235, 0.8);
+		}
+	}
+}
+.aligin-menu {
+	margin-top: 15px;
+}
 </style>
