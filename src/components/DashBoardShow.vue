@@ -18,6 +18,10 @@
 					<template v-if="item.type != 'text' && item.type != 'numText'">
 						<header class="chart-head">
 							<span>{{item.title + item.index}}</span>
+							<div class="head-menu head-abso" @mousedown.stop>
+								<i class="el-icon-zoom-in" title="放大" @click="showBig(item)"></i>
+								<i class="el-icon-download" title="下载" @click="downloadD(item)"></i>
+							</div>
 						</header>
 						<div class="drag-box" @mousedown.stop>
 							<ve-chart
@@ -305,80 +309,15 @@
 						},
 					},
 				],
-				xStand: {
-					top: 0,
-					display: "none",
-				},
-				yStand: {
-					left: 0,
-					display: "none",
-				},
-				// 需改边的left 和 top
-				leftChange: "no",
-				topChange: "no",
-				addFuncTol: null,
-				throTimer: null,
 				// 编辑长宽
 				editSizeStu: false,
-				drageStu: false,
-				editSizeInfo: {
-					left: 0,
-					top: 0,
-					width: 0,
-					height: 0,
-				},
-				backupData: {
-					left: 0,
-					top: 0,
-					width: 0,
-					height: 0,
-				},
 
-				// 编辑
-				titleE: "",
-				leftE: 0,
-				topE: 0,
-				widthE: 0,
-				heightE: 0,
-				borderSE: "solid",
-				borderObj: {
-					borderW: "0",
-					borderC: "#000",
-					borderS: "solid",
-				},
-
-				currEditItem: null,
-				rundType: ["pie"],
-				resizeChar: null, // char图resize
 				resizeTh: null,
 				currBig: { settings: {} },
 				showBigStu: false,
 				hiddenHei: true,
 				refreshDash: true,
 				reloadTimer: null,
-				upImageData: null, // 上传图片
-				borderStyle: [
-					{
-						label: "无边框",
-						value: "none",
-					},
-					{
-						label: "点状",
-						value: "dotted",
-					},
-					{
-						label: "虚线",
-						value: "dashed",
-					},
-					{
-						label: "实线",
-						value: "solid",
-					},
-					{
-						label: "双线",
-						value: "double",
-					},
-				],
 			};
 		},
 		methods: {
@@ -455,6 +394,8 @@
 					});
 				}
 			},
+			// 下载
+			downloadD() {},
 		},
 		mounted() {
 			this.reloadSize();
@@ -467,6 +408,17 @@
 		filters: {
 			formatNum(value, setting) {
 				return numbro(value).format(setting);
+			},
+		},
+		watch: {
+			showBigStu(newV) {
+				if (newV) {
+					this.hiddenHei = false;
+				} else {
+					setTimeout(() => {
+						this.hiddenHei = true;
+					}, 500);
+				}
 			},
 		},
 	};
@@ -508,7 +460,7 @@
 			display: flex;
 		}
 		background-size: 100% 100%;
-        box-sizing: border-box;
+		box-sizing: border-box;
 	}
 	.header-title {
 		height: 100%;
@@ -551,14 +503,13 @@
 	}
 	.head-menu {
 		background-color: #fff;
-		display: none;
 		border-radius: 2em;
-		border-top: 1px solid transparent;
+		border: 1px solid #44444480;
 		transition: border-color 0.2s;
 		cursor: auto;
-		&:hover {
-			border-top-color: #44444480;
-		}
+		// &:hover {
+		// 	border-color: #44444480;
+		// }
 		padding: 2px 10px;
 		& i {
 			cursor: pointer;
@@ -571,7 +522,7 @@
 				background-color: rgba(0, 0, 0, 0.2);
 			}
 		}
-		& i + i {
+		& i ~ i {
 			margin-left: 10px;
 		}
 		&-more {

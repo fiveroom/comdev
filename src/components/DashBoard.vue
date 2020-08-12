@@ -20,8 +20,8 @@
 					:x="item.left"
 					:y="item.top"
 					:z="item.zIndex"
-					:parentH="bodySize.height"
-					:parentW="bodySize.width"
+					:parentH="bodyStyle.height"
+					:parentW="bodyStyle.width"
 					v-on:resizing="val => resize(val, item)"
 					v-on:dragging="val => resize(val, item)"
 					@clicked="activeIndex = item.index"
@@ -42,7 +42,7 @@
                                 fontWeight: item.style.headWeight && 'bolder' || 'normal',
                                 }"
 							>{{item.title + item.index}}</span>
-							<ul class="head-menu head-abso" @mousedown.stop>
+							<div class="head-menu head-abso" @mousedown.stop>
 								<i class="el-icon-edit" title="编辑样式" @click="editSize(item)"></i>
 								<i class="el-icon-coin" title="编辑数据" @click="addDataTo(item)"></i>
 								<div class="head-menu-more">
@@ -68,7 +68,7 @@
 									</div>
 								</div>
 								<i class="el-icon-delete-solid" title="删除" @click="deleteBox(item)"></i>
-							</ul>
+							</div>
 						</header>
 						<div class="drag-box" @mousedown.stop>
 							<ve-chart
@@ -137,10 +137,6 @@
 											<li>
 												<i class="el-icon-caret-bottom" title="向下" @click="bottomEle(item)"></i>
 											</li>
-
-											<!-- <li>
-												<i class="iconfont icon-beijingtu" title="添加背景图" @click="addBgcBox(item)"></i>
-											</li>-->
 										</ul>
 									</div>
 								</div>
@@ -440,7 +436,7 @@
 						<el-upload
 							class="upimg-box"
 							:show-file-list="false"
-							:before-upload="(val) => beforUpImage(val, 'body')"
+							:before-upload="(val) => beforUpImage(val, 'bodyStyle')"
 							:http-request="()=>{}"
 							accept="image/*"
 							action="#"
@@ -450,7 +446,6 @@
 						</el-upload>
 						<div class="upimg-menu">
 							<el-button plain size="small" type="danger" @click="bodyStyle.backgroundImage = ''">移除</el-button>
-							<!-- <el-button plain size="small" type="primary">应用所有</el-button> -->
 						</div>
 					</div>
 					<div class="mini-title">背景颜色</div>
@@ -568,9 +563,10 @@
 						},
 					],
 				},
-				activeIndex: 1,
+                activeIndex: 1,
+                
 				// 画布大小
-				bodySize: {
+				bodyStyle: {
 					width: 1880,
 					height: 967,
 					oldWidth: 1880,
@@ -832,7 +828,8 @@
 							backgroundColor: "",
 						},
 					},
-				],
+                ],
+                
 				// x、y轴定位虚线
 				xStand: {
 					top: 0,
@@ -922,10 +919,10 @@
 				],
 				// 画布设置
 				editSizeStuCanv: false,
-				bodyStyle: {
-					backgroundImage: "",
-					backgroundColor: "#ffffff",
-				},
+				// bodyStyle: {
+				// 	backgroundImage: "",
+				// 	backgroundColor: "#ffffff",
+				// },
 				bodyStyleCp: {
 					backgroundImage: "",
 					backgroundColor: "#ffffff",
@@ -1002,8 +999,6 @@
 					}
 				};
 			},
-			// 添加背景图
-			addBgcBox() {},
 			// 关闭放大
 			closeBig() {
 				this.currBig = {};
@@ -1087,8 +1082,8 @@
 				this.xStand.display = "none";
 			},
 			getBodySiz() {
-				this.bodySize.width = this.$refs.dashBody.clientWidth;
-				this.bodySize.height = this.$refs.dashBody.clientHeight;
+				this.bodyStyle.width = this.$refs.dashBody.clientWidth;
+				this.bodyStyle.height = this.$refs.dashBody.clientHeight;
 			},
 			judgeLoact(newRect) {
 				// if (!this.addFuncTol) {
@@ -1131,8 +1126,8 @@
 			pagePost(newRect) {
 				let disW = newRect.width / 2 + newRect.left;
 				let disH = newRect.height / 2 + newRect.top;
-				let centerW = this.bodySize.width / 2;
-				let centerH = this.bodySize.height / 2;
+				let centerW = this.bodyStyle.width / 2;
+				let centerH = this.bodyStyle.height / 2;
 				if (
 					Math.abs(disW - centerW) < 10 &&
 					Math.abs(disW - centerW) != 0
@@ -1416,13 +1411,13 @@
 						width: 0,
 						top: topV + objItem.height,
 						left: objItem.width / 2 + leftV,
-						height: this.bodySize.height - topV - objItem.height,
+						height: this.bodyStyle.height - topV - objItem.height,
 						type: "bottom",
 					};
 				}
 				if (!rightObj) {
 					rightObj = {
-						width: this.bodySize.width - leftV - objItem.width,
+						width: this.bodyStyle.width - leftV - objItem.width,
 						top: topV + objItem.height / 2,
 						left: leftV + objItem.width,
 						height: 0,
@@ -1605,13 +1600,13 @@
 			reloadSize(ev) {
 				this.editSizeStu = false;
 				if (this.$refs.dashBody) {
-					this.bodySize.oldWidth = this.bodySize.width;
-					this.bodySize.oldHeight = this.bodySize.height;
+					this.bodyStyle.oldWidth = this.bodyStyle.width;
+					this.bodyStyle.oldHeight = this.bodyStyle.height;
 					// this.$nextTick(() => {
-					this.bodySize.width = this.$refs.dashBody.clientWidth;
-					this.bodySize.height = this.$refs.dashBody.clientHeight;
-					let ratioW = this.bodySize.oldWidth / this.bodySize.width;
-					let ratioH = this.bodySize.oldHeight / this.bodySize.height;
+					this.bodyStyle.width = this.$refs.dashBody.clientWidth;
+					this.bodyStyle.height = this.$refs.dashBody.clientHeight;
+					let ratioW = this.bodyStyle.oldWidth / this.bodyStyle.width;
+					let ratioH = this.bodyStyle.oldHeight / this.bodyStyle.height;
 					clearInterval(this.reloadTimer);
 					this.boxList.forEach((item) => {
 						let oldWidth = item.width;
@@ -1743,10 +1738,18 @@
 			},
 			// 删除盒子
 			deleteBox(item) {
-				this.boxList.splice(
-					this.boxList.findIndex((it) => it.index == item.index),
-					1
-				);
+				this.$confirm("此操作将删除该盒子, 是否继续?", "提示", {
+					confirmButtonText: "确定",
+					cancelButtonText: "取消",
+					type: "warning",
+				})
+					.then(() => {
+						this.boxList.splice(
+							this.boxList.findIndex((it) => it.index == item.index),
+							1
+						);
+					})
+					.catch(() => {});
 			},
 			// 编辑数据
 			addDataTo(item) {
